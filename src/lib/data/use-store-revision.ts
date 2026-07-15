@@ -3,7 +3,7 @@
 import { useSyncExternalStore } from "react";
 import { subscribeStore } from "@/lib/data/store-events";
 
-const STORAGE_KEY = "universal-rating.mock-store.v4";
+const STORAGE_KEY = "universal-rating.mock-store.v5";
 
 function getRevision(): string {
   if (typeof window === "undefined") return "0";

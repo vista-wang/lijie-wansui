@@ -10,13 +10,11 @@ export function formatScoreSummary(summary: InstanceScoreSummary): string {
     return `${summary.average.toFixed(1)} 分 · ${summary.count} 人评`;
   }
   if (summary.count === 0) return "暂无投票";
-  const side =
-    summary.majority === "approve"
-      ? "赞成占优"
-      : summary.majority === "oppose"
-        ? "反对占优"
-        : "双方持平";
-  return `${side} · 赞成 ${summary.approveCount} / 反对 ${summary.opposeCount}`;
+  if (summary.majority === "tie") {
+    return `双方持平 · ${summary.approveCount} : ${summary.opposeCount}`;
+  }
+  // 只展示票数，不把弱多数夸成「很同意/很反对」
+  return `赞成 ${summary.approveCount} · 反对 ${summary.opposeCount}`;
 }
 
 export function auditActionLabel(action: AuditAction): string {

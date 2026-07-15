@@ -8,7 +8,7 @@ import type {
 } from "@/lib/types/domain";
 
 /** 使用 Cursor 制作 */
-const STORAGE_KEY = "universal-rating.mock-store.v4";
+const STORAGE_KEY = "universal-rating.mock-store.v5";
 
 export interface MockStoreData {
   instances: Instance[];
@@ -142,7 +142,7 @@ function seedStore(): MockStoreData {
     {
       id: "rating-e1c",
       instanceId: "instance-extra-2",
-      score: 1,
+      score: 0,
       authorId: admin,
       createdAt: now,
       updatedAt: now,
@@ -168,6 +168,14 @@ function seedStore(): MockStoreData {
       instanceId: "instance-extra-4",
       score: 1,
       authorId: bob,
+      createdAt: now,
+      updatedAt: now,
+    },
+    {
+      id: "rating-e3c",
+      instanceId: "instance-extra-4",
+      score: 1,
+      authorId: admin,
       createdAt: now,
       updatedAt: now,
     },
@@ -277,12 +285,41 @@ function canUseStorage(): boolean {
 
 function normalizeStore(data: Partial<MockStoreData>): MockStoreData {
   const seeded = seedStore();
+  const instanceMap = new Map(
+    (data.instances ?? []).map((item) => [item.id, item]),
+  );
+  for (const item of seeded.instances) {
+    if (!instanceMap.has(item.id)) instanceMap.set(item.id, item);
+  }
+
+  const ratingMap = new Map((data.ratings ?? []).map((item) => [item.id, item]));
+  for (const item of seeded.ratings) {
+    if (!ratingMap.has(item.id)) ratingMap.set(item.id, item);
+  }
+
+  const commentMap = new Map(
+    (data.comments ?? []).map((item) => [item.id, item]),
+  );
+  for (const item of seeded.comments) {
+    if (!commentMap.has(item.id)) commentMap.set(item.id, item);
+  }
+
+  // 旧缓存实例过少时，直接用完整种子，确保主页可分页
+  const instances = [...instanceMap.values()];
+  const useSeedCatalog = instances.length < seeded.instances.length;
+
   return {
-    instances: data.instances ?? seeded.instances,
-    ratings: data.ratings ?? seeded.ratings,
-    comments: data.comments ?? seeded.comments,
-    auditEvents: data.auditEvents ?? seeded.auditEvents,
-    sensitiveWords: data.sensitiveWords ?? seeded.sensitiveWords,
+    instances: useSeedCatalog ? seeded.instances : instances,
+    ratings: useSeedCatalog ? seeded.ratings : [...ratingMap.values()],
+    comments: useSeedCatalog
+      ? seeded.comments
+      : [...commentMap.values()],
+    auditEvents: data.auditEvents?.length
+      ? data.auditEvents
+      : seeded.auditEvents,
+    sensitiveWords: data.sensitiveWords?.length
+      ? data.sensitiveWords
+      : seeded.sensitiveWords,
   };
 }
 

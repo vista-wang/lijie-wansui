@@ -23,7 +23,12 @@ export interface RecommendOptions {
   seed?: string;
 }
 
-/** scale_10：≥8 很同意，≤3 很反对；binary：多数方 */
+/**
+ * 内部混排用（不展示文案）：
+ * - scale_10：均分 ≥8 / ≤3
+ * - binary：必须「明显」占优（票差 ≥ 2），避免 2:1 这种弱多数被当成强同意
+ *   （例如李明投反对、另两人赞成 → 中性，不进同意池）
+ */
 export function classifySentiment(
   summary: InstanceScoreSummary | null,
 ): Sentiment {
@@ -36,6 +41,8 @@ export function classifySentiment(
     return "neutral";
   }
 
+  const margin = Math.abs(summary.approveCount - summary.opposeCount);
+  if (margin < 2) return "neutral";
   if (summary.majority === "approve") return "agree";
   if (summary.majority === "oppose") return "oppose";
   return "neutral";

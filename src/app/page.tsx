@@ -22,7 +22,8 @@ import {
 } from "@/lib/data/repositories";
 import { useStoreRevision } from "@/lib/data/use-store-revision";
 
-const PAGE_SIZE = 5;
+/** 每页条数；保证常见数据量下出现多页 */
+const PAGE_SIZE = 4;
 
 function HomeContent() {
   useStoreRevision();
@@ -42,7 +43,10 @@ function HomeContent() {
     maxShare: 0.65,
     seed: todaySeed(),
   });
-  const { rows, totalPages } = paginateBalanced(feed, page, {
+  // 分页以完整混排列表为准，避免钳制逻辑把总页数算丢
+  const totalPages = Math.max(1, Math.ceil(feed.length / PAGE_SIZE));
+  const current = Math.min(page, totalPages);
+  const { rows } = paginateBalanced(feed, current, {
     pageSize: PAGE_SIZE,
     minShare: 0.35,
     maxShare: 0.65,
@@ -70,7 +74,7 @@ function HomeContent() {
         className="animate-rise mt-2 max-w-xl text-[15px] leading-relaxed text-[var(--secondary-label)] sm:text-[17px]"
         style={{ animationDelay: "60ms" }}
       >
-        很同意与很反对按比例混排，避免一边过多或过少。写操作需登录。
+        按两边声音混排推荐，避免一边刷屏。写操作需登录。
       </p>
 
       <div className="mt-8 sm:mt-10">
@@ -78,7 +82,7 @@ function HomeContent() {
       </div>
 
       <Pagination
-        page={Math.min(page, totalPages)}
+        page={current}
         totalPages={totalPages}
         hrefForPage={(p) => (p <= 1 ? "/" : `/?page=${p}`)}
       />
