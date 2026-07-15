@@ -1,55 +1,45 @@
 "use client";
 
 /**
- * 理解万岁 · 主页（推荐混排）
+ * 理解万岁 · 主页（用户亲和推荐）
  * 使用 Cursor 制作
  */
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
+import { useAuth } from "@/components/auth/AuthProvider";
 import { InstanceList } from "@/components/instances/InstanceList";
 import { Pagination } from "@/components/ui/Pagination";
-import {
-  buildMixedFeed,
-  paginateBalanced,
-  todaySeed,
-  toRecommendItems,
-} from "@/lib/data/recommend";
-import {
-  getInstanceScoreSummary,
-  listPublicInstances,
-} from "@/lib/data/repositories";
+import { getHomeRecommendPage } from "@/lib/data/repositories";
 import { useStoreRevision } from "@/lib/data/use-store-revision";
+import { useClientReady } from "@/lib/hooks/useClientReady";
 
-/** 每页条数；保证常见数据量下出现多页 */
-const PAGE_SIZE = 4;
+const PAGE_SIZE = 6;
 
 function HomeContent() {
+  const ready = useClientReady();
   useStoreRevision();
+  const { user } = useAuth();
   const searchParams = useSearchParams();
   const rawPage = Number(searchParams.get("page") || "1");
   const page = Number.isFinite(rawPage) && rawPage > 0 ? Math.floor(rawPage) : 1;
 
-  const catalog = toRecommendItems(
-    listPublicInstances().map((instance) => ({
-      instance,
-      summary: getInstanceScoreSummary(instance.id),
-    })),
-  );
-  const feed = buildMixedFeed(catalog, {
-    targetAgreeRatio: 0.5,
-    minShare: 0.35,
-    maxShare: 0.65,
-    seed: todaySeed(),
-  });
-  // 分页以完整混排列表为准，避免钳制逻辑把总页数算丢
-  const totalPages = Math.max(1, Math.ceil(feed.length / PAGE_SIZE));
-  const current = Math.min(page, totalPages);
-  const { rows } = paginateBalanced(feed, current, {
+  if (!ready) {
+    return (
+      <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-8 sm:px-5 sm:py-10">
+        <h1 className="text-[28px] font-semibold tracking-tight text-[var(--label)] sm:text-[34px]">
+          主页
+        </h1>
+        <p className="mt-4 text-[15px] text-[var(--secondary-label)]">加载推荐…</p>
+      </main>
+    );
+  }
+
+  const { rows, totalPages, page: current } = getHomeRecommendPage({
+    userId: user?.id ?? null,
+    page,
     pageSize: PAGE_SIZE,
-    minShare: 0.35,
-    maxShare: 0.65,
   });
 
   return (
@@ -74,7 +64,9 @@ function HomeContent() {
         className="animate-rise mt-2 max-w-xl text-[15px] leading-relaxed text-[var(--secondary-label)] sm:text-[17px]"
         style={{ animationDelay: "60ms" }}
       >
-        按两边声音混排推荐，避免一边刷屏。写操作需登录。
+        {user
+          ? "根据你的评分偏好，匹配气味相投的人与内容，并两边混排。"
+          : "登录后将按你的偏好个性化推荐；当前为访客混排。"}
       </p>
 
       <div className="mt-8 sm:mt-10">

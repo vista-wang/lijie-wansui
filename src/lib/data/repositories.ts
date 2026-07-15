@@ -4,6 +4,12 @@ import {
   saveMockStore,
   type MockStoreData,
 } from "@/lib/data/mock-store";
+import {
+  buildUserAffinityFeed,
+  paginateFeed,
+  todaySeed,
+  type RecommendItem,
+} from "@/lib/data/recommend";
 import { assertValidScore, summarizeScores } from "@/lib/data/score";
 import { maskSensitiveText } from "@/lib/data/sensitive";
 import type {
@@ -128,6 +134,35 @@ export function getInstanceScoreSummary(
   if (!instance) return null;
   const ratings = store.ratings.filter((r) => r.instanceId === instanceId);
   return summarizeScores(instance.scoringMode, ratings);
+}
+
+/** 主页推荐：按用户亲和混排并分页（仅客户端调用，避免 hydration 偏差） */
+export function getHomeRecommendPage(input: {
+  userId: string | null;
+  page: number;
+  pageSize?: number;
+}): { rows: RecommendItem[]; totalPages: number; page: number } {
+  const store = loadMockStore();
+  const words = store.sensitiveWords;
+  const publicInstances = store.instances.map((instance) => ({
+    ...instance,
+    title: maskSensitiveText(instance.title, words),
+    description: maskSensitiveText(instance.description, words),
+  }));
+
+  const feed = buildUserAffinityFeed({
+    userId: input.userId,
+    instances: publicInstances,
+    ratings: store.ratings,
+    options: {
+      targetAgreeRatio: 0.5,
+      minShare: 0.35,
+      maxShare: 0.65,
+      seed: `${todaySeed()}-${input.userId ?? "guest"}`,
+    },
+  });
+
+  return paginateFeed(feed, input.page, input.pageSize ?? 6);
 }
 
 export function getMyRating(

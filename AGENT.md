@@ -51,16 +51,22 @@ Build **理解万岁**, a web-based universal evaluation system: users can disco
    - `scale_10`: score 1–10; instance score = **mean** of all scores  
    - `binary`: 赞成(1) / 反对(0); instance result = **majority side** (more voters wins; tie = `tie`)
 
-2. **One rating per account per instance** — may **update** that single score later; cannot add a second rating row.
+2. **Recommendation** — user-affinity collaborative filtering（物以类聚、人以群分）:
+   - Find users with similar polar ratings; recommend unrated items they lean toward  
+   - Mix “agree-leaning” and “oppose-leaning” candidates (~50%, clamped 35–65%)  
+   - Cold start (guest / no polar ratings): global balanced mix  
+   - Do **not** show sentiment labels in UI  
 
-3. **Anonymous comments** — separate from scores; public surface never shows author identity.
+3. **One rating per account per instance** — may **update** that single score later; cannot add a second rating row.
 
-4. **Per real account, per instance**
+4. **Anonymous comments** — separate from scores; public surface never shows author identity.
+
+5. **Per real account, per instance**
    - At most **one** score (updatable).  
    - At most **one** comment (**no second comment**; same row may be edited).  
    - One real-name identity ↔ one system account (1:1).
 
-5. **Audit** — create/update score or comment still recorded with real `authorId` in backend.
+6. **Audit** — create/update score or comment still recorded with real `authorId` in backend.
 
 ## Domain Sketch
 

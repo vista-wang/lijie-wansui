@@ -35,7 +35,7 @@ export default function AccountPage() {
         <h2 className="text-[17px] font-semibold text-[var(--label)]">
           切换伪账号
         </h2>
-        <ul className="mt-3 space-y-2">
+        <ul className="mt-3 max-h-[22rem] space-y-2 overflow-y-auto pr-1">
           {users.map((u) => (
             <li key={u.id}>
               <button
