@@ -41,7 +41,7 @@ export default function InstanceDetailPage() {
 
   if (!instance) {
     return (
-      <main className="mx-auto max-w-3xl px-5 py-16 text-[17px] text-[var(--secondary-label)]">
+      <main className="w-full py-12 text-[17px] text-[var(--secondary-label)]">
         未找到该实例。
         <Link href="/" className="ml-2 text-[var(--system-blue)]">
           返回列表
@@ -90,7 +90,7 @@ export default function InstanceDetailPage() {
   }
 
   return (
-    <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-8 sm:px-5 sm:py-10">
+    <main className="w-full flex-1 pb-10 pt-1 sm:pt-2">
       <Link
         href="/"
         className="text-[15px] text-[var(--system-blue)] hover:underline"

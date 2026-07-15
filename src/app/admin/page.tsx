@@ -16,7 +16,7 @@ export default function AdminPage() {
 
   if (!ready) {
     return (
-      <main className="mx-auto max-w-3xl px-5 py-16 text-[var(--secondary-label)]">
+      <main className="w-full py-12 text-[var(--secondary-label)]">
         加载中…
       </main>
     );
@@ -24,7 +24,7 @@ export default function AdminPage() {
 
   if (!user || user.role !== "admin") {
     return (
-      <main className="mx-auto max-w-3xl px-5 py-16">
+      <main className="w-full py-12">
         <h1 className="text-[28px] font-semibold text-[var(--label)]">管理</h1>
         <p className="mt-3 text-[17px] text-[var(--secondary-label)]">
           需要管理员账号。请到「账号」切换为李明后进入。
@@ -43,7 +43,7 @@ export default function AdminPage() {
   }
 
   return (
-    <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-8 sm:px-5 sm:py-10">
+    <main className="w-full flex-1 pb-10 pt-1 sm:pt-2">
       <h1 className="text-[28px] font-semibold tracking-tight text-[var(--label)] sm:text-[34px]">
         管理
       </h1>

@@ -137,6 +137,77 @@ export function getInstanceScoreSummary(
 }
 
 /** 主页推荐：按用户亲和混排并分页（仅客户端调用，避免 hydration 偏差） */
+export type HotRankItem = {
+  id: string;
+  title: string;
+  scoreLabel: string;
+  count: number;
+};
+
+export type CategoryStat = {
+  category: string;
+  count: number;
+};
+
+export type RecentItem = {
+  id: string;
+  title: string;
+  createdAt: string;
+};
+
+/** 桌面侧栏：热门 / 分类 / 最新 */
+export function getSidebarPanels(): {
+  hot: HotRankItem[];
+  categories: CategoryStat[];
+  recent: RecentItem[];
+} {
+  const store = loadMockStore();
+  const words = store.sensitiveWords;
+
+  const hot = store.instances
+    .map((instance) => {
+      const ratings = store.ratings.filter((r) => r.instanceId === instance.id);
+      const summary = summarizeScores(instance.scoringMode, ratings);
+      const count = summary.count;
+      let scoreLabel = "暂无";
+      if (summary.mode === "scale_10" && summary.average != null) {
+        scoreLabel = `${summary.average.toFixed(1)} 分`;
+      } else if (summary.mode === "binary" && summary.count > 0) {
+        scoreLabel = `${summary.approveCount}:${summary.opposeCount}`;
+      }
+      return {
+        id: instance.id,
+        title: maskSensitiveText(instance.title, words),
+        scoreLabel,
+        count,
+      };
+    })
+    .sort((a, b) => b.count - a.count || a.title.localeCompare(b.title, "zh-CN"))
+    .slice(0, 8);
+
+  const categoryMap = new Map<string, number>();
+  for (const instance of store.instances) {
+    const key = instance.category?.trim() || "未分类";
+    categoryMap.set(key, (categoryMap.get(key) ?? 0) + 1);
+  }
+  const categories = [...categoryMap.entries()]
+    .map(([category, count]) => ({ category, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 8);
+
+  const recent = store.instances
+    .slice()
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+    .slice(0, 6)
+    .map((instance) => ({
+      id: instance.id,
+      title: maskSensitiveText(instance.title, words),
+      createdAt: instance.createdAt,
+    }));
+
+  return { hot, categories, recent };
+}
+
 export function getHomeRecommendPage(input: {
   userId: string | null;
   page: number;

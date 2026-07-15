@@ -27,7 +27,7 @@ function HomeContent() {
 
   if (!ready) {
     return (
-      <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-8 sm:px-5 sm:py-10">
+      <main className="w-full flex-1 pb-10 pt-1 sm:pt-2">
         <h1 className="text-[28px] font-semibold tracking-tight text-[var(--label)] sm:text-[34px]">
           主页
         </h1>
@@ -43,7 +43,7 @@ function HomeContent() {
   });
 
   return (
-    <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-8 sm:px-5 sm:py-10">
+    <main className="w-full flex-1 pb-10 pt-1 sm:pt-2">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 animate-rise">
           <p className="text-[13px] font-medium text-[var(--secondary-label)]">
@@ -86,7 +86,7 @@ export default function HomePage() {
   return (
     <Suspense
       fallback={
-        <main className="mx-auto max-w-3xl px-5 py-16 text-[var(--secondary-label)]">
+        <main className="w-full py-12 text-[var(--secondary-label)]">
           加载中…
         </main>
       }

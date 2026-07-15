@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { Suspense, useMemo, useState } from "react";
 import { InstanceList } from "@/components/instances/InstanceList";
 import {
   getInstanceScoreSummary,
@@ -8,9 +9,9 @@ import {
 } from "@/lib/data/repositories";
 import { useStoreRevision } from "@/lib/data/use-store-revision";
 
-export default function SearchPage() {
+function SearchContent({ initialQuery }: { initialQuery: string }) {
   useStoreRevision();
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState(initialQuery);
   const q = query.trim().toLowerCase();
 
   const rows = useMemo(() => {
@@ -30,7 +31,7 @@ export default function SearchPage() {
   }, [q]);
 
   return (
-    <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-8 sm:px-5 sm:py-10">
+    <main className="w-full flex-1 pb-10 pt-1 sm:pt-2">
       <h1 className="text-[28px] font-semibold tracking-tight text-[var(--label)] sm:text-[34px]">
         搜索
       </h1>
@@ -55,5 +56,25 @@ export default function SearchPage() {
         <InstanceList rows={rows} />
       </div>
     </main>
+  );
+}
+
+function SearchPageInner() {
+  const searchParams = useSearchParams();
+  const initialQuery = searchParams.get("q") ?? "";
+  return <SearchContent key={initialQuery} initialQuery={initialQuery} />;
+}
+
+export default function SearchPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="w-full py-12 text-[var(--secondary-label)]">
+          加载中…
+        </main>
+      }
+    >
+      <SearchPageInner />
+    </Suspense>
   );
 }

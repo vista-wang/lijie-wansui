@@ -20,7 +20,7 @@ export default function SensitiveWordsPage() {
 
   if (!ready) {
     return (
-      <main className="mx-auto max-w-3xl px-5 py-16 text-[var(--secondary-label)]">
+      <main className="w-full py-12 text-[var(--secondary-label)]">
         加载中…
       </main>
     );
@@ -28,7 +28,7 @@ export default function SensitiveWordsPage() {
 
   if (!user || user.role !== "admin") {
     return (
-      <main className="mx-auto max-w-3xl px-5 py-16">
+      <main className="w-full py-12">
         <h1 className="text-[28px] font-semibold text-[var(--label)]">
           敏感词管理
         </h1>
@@ -51,7 +51,7 @@ export default function SensitiveWordsPage() {
   }
 
   return (
-    <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-8 sm:px-5 sm:py-10">
+    <main className="w-full flex-1 pb-10 pt-1 sm:pt-2">
       <Link
         href="/admin"
         className="text-[15px] text-[var(--system-blue)] hover:underline"

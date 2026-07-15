@@ -37,7 +37,7 @@ export function AppHeader() {
   return (
     <>
       <header className="sticky top-0 z-20 border-b border-[var(--separator)] bg-[color-mix(in_srgb,var(--background)_82%,transparent)] backdrop-blur-xl">
-        <div className="mx-auto flex max-w-3xl items-center gap-2 px-4 py-3 sm:gap-4 sm:px-5">
+        <div className="mx-auto flex max-w-[90rem] items-center gap-2 px-4 py-3 sm:gap-4 sm:px-5">
           <Link
             href="/"
             className="shrink-0 text-[17px] font-semibold tracking-tight text-[var(--label)]"

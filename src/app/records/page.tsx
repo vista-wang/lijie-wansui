@@ -12,7 +12,7 @@ export default function RecordsPage() {
   const records = user ? listMyRecords(user.id) : [];
 
   return (
-    <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-8 sm:px-5 sm:py-10">
+    <main className="w-full flex-1 pb-10 pt-1 sm:pt-2">
       <h1 className="text-[28px] font-semibold tracking-tight text-[var(--label)] sm:text-[34px]">
         记录
       </h1>
