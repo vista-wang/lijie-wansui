@@ -1,8 +1,10 @@
-# AGENT.md — Universal Rating System
+# AGENT.md — 理解万岁
+
+> 使用 Cursor 制作
 
 ## Product Goal
 
-Build a **web-based universal evaluation system**: users can discover or create **instances** (subjects of evaluation), then leave **anonymous** public scores and reviews. Every write action is still attributed with the operator’s **real identity** in the backend audit trail.
+Build **理解万岁**, a web-based universal evaluation system: users can discover or create **instances** (subjects of evaluation), then leave **anonymous** public scores and reviews. Every write action is still attributed with the operator’s **real identity** in the backend audit trail.
 
 ## Non-Negotiables
 
@@ -25,9 +27,9 @@ Build a **web-based universal evaluation system**: users can discover or create 
 - [x] Repo + Next.js environment  
 - [x] AGENT.md / CLAUDE.md  
 - [x] Initial plan  
-- [ ] Domain model & mock data layer  
-- [ ] Core UI (list / detail / create / rate)  
-- [ ] Admin / audit view (real-name trail)  
+- [x] Domain model & mock data layer  
+- [x] Core UI (list / detail / create / rate / comment) — 全中文  
+- [x] Admin / audit + 敏感词打码  
 - [ ] Supabase integration (later, explicit go-ahead)
 
 ## Tech Stack (decided for bootstrap)
@@ -43,11 +45,29 @@ Build a **web-based universal evaluation system**: users can discover or create 
 | Package name | `universal-rating` (npm-safe; workspace folder may differ) |
 | App root | repository root |
 
-## Domain Sketch (provisional)
+## Locked product rules (2026-07-15)
 
-- **Instance** — evaluable subject (title, description, optional category/tags, createdBy, createdAt).  
-- **Rating** — numeric score + optional text; public display is anonymous; `authorId` stored for audit only.  
-- **User** — real-name identity for login & audit.  
+1. **Scoring modes** — creator picks **one** mode per instance:
+   - `scale_10`: score 1–10; instance score = **mean** of all scores  
+   - `binary`: 赞成(1) / 反对(0); instance result = **majority side** (more voters wins; tie = `tie`)
+
+2. **One rating per account per instance** — may **update** that single score later; cannot add a second rating row.
+
+3. **Anonymous comments** — separate from scores; public surface never shows author identity.
+
+4. **Per real account, per instance**
+   - At most **one** score (updatable).  
+   - At most **one** comment (**no second comment**; same row may be edited).  
+   - One real-name identity ↔ one system account (1:1).
+
+5. **Audit** — create/update score or comment still recorded with real `authorId` in backend.
+
+## Domain Sketch
+
+- **Instance** — subject + `scoringMode` (`scale_10` | `binary`).  
+- **Rating** — one row per `(authorId, instanceId)`; updatable score.  
+- **Comment** — one row per `(authorId, instanceId)`; anonymous publicly; no second row.  
+- **User** — real-name identity (1:1 with login account).  
 - **AuditEvent** — who / what / when / entity id.
 
 Interfaces live under `src/lib/`; UI must not import Supabase clients directly until the integration phase.
@@ -69,6 +89,6 @@ npm run lint
 npm run build
 ```
 
-## Open Questions (parked for user)
+## Open Questions
 
-See `docs/plans/2026-07-15-initial-plan.md` — confirm instance taxonomy and scoring scale before feature build.
+- None blocking Phase 1.

@@ -1,42 +1,101 @@
-export default function Home() {
-  return (
-    <div className="flex flex-1 flex-col">
-      <header className="border-b border-black/[0.06] px-6 py-4">
-        <div className="mx-auto flex max-w-3xl items-center justify-between">
-          <p className="text-[17px] font-semibold tracking-tight text-[var(--label)]">
-            Universal Rating
-          </p>
-          <p className="text-[13px] text-[var(--secondary-label)]">Mock auth ready</p>
-        </div>
-      </header>
+"use client";
 
-      <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col justify-center px-6 py-16">
-        <p className="text-[13px] font-medium uppercase tracking-[0.08em] text-[var(--secondary-label)]">
-          Phase 0
-        </p>
-        <h1 className="mt-3 text-[34px] font-semibold leading-tight tracking-tight text-[var(--label)]">
-          Universal Rating
-        </h1>
-        <p className="mt-4 max-w-xl text-[17px] leading-relaxed text-[var(--secondary-label)]">
-          Evaluate any instance anonymously in public. Every write is attributed
-          with a real identity in the audit trail. Development environment is
-          ready — waiting for your next instruction.
-        </p>
-        <ul className="mt-10 space-y-3 text-[15px] text-[var(--label)]">
-          <li className="flex gap-3">
-            <span className="text-[var(--system-blue)]">✓</span>
-            Next.js + TypeScript + Tailwind
-          </li>
-          <li className="flex gap-3">
-            <span className="text-[var(--system-blue)]">✓</span>
-            AGENT.md / CLAUDE.md / initial plan
-          </li>
-          <li className="flex gap-3">
-            <span className="text-[var(--system-blue)]">✓</span>
-            Local mock accounts (Supabase deferred)
-          </li>
-        </ul>
-      </main>
-    </div>
+/**
+ * 理解万岁 · 主页（推荐混排）
+ * 使用 Cursor 制作
+ */
+
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import { Suspense } from "react";
+import { InstanceList } from "@/components/instances/InstanceList";
+import { Pagination } from "@/components/ui/Pagination";
+import {
+  buildMixedFeed,
+  paginateBalanced,
+  todaySeed,
+  toRecommendItems,
+} from "@/lib/data/recommend";
+import {
+  getInstanceScoreSummary,
+  listPublicInstances,
+} from "@/lib/data/repositories";
+import { useStoreRevision } from "@/lib/data/use-store-revision";
+
+const PAGE_SIZE = 5;
+
+function HomeContent() {
+  useStoreRevision();
+  const searchParams = useSearchParams();
+  const rawPage = Number(searchParams.get("page") || "1");
+  const page = Number.isFinite(rawPage) && rawPage > 0 ? Math.floor(rawPage) : 1;
+
+  const catalog = toRecommendItems(
+    listPublicInstances().map((instance) => ({
+      instance,
+      summary: getInstanceScoreSummary(instance.id),
+    })),
+  );
+  const feed = buildMixedFeed(catalog, {
+    targetAgreeRatio: 0.5,
+    minShare: 0.35,
+    maxShare: 0.65,
+    seed: todaySeed(),
+  });
+  const { rows, totalPages } = paginateBalanced(feed, page, {
+    pageSize: PAGE_SIZE,
+    minShare: 0.35,
+    maxShare: 0.65,
+  });
+
+  return (
+    <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-8 sm:px-5 sm:py-10">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 animate-rise">
+          <p className="text-[13px] font-medium text-[var(--secondary-label)]">
+            推荐
+          </p>
+          <h1 className="mt-1 text-[28px] font-semibold tracking-tight text-[var(--label)] sm:text-[34px]">
+            主页
+          </h1>
+        </div>
+        <Link
+          href="/instances/new"
+          className="btn-press mt-6 inline-flex min-h-11 shrink-0 items-center rounded-xl bg-[var(--system-blue)] px-4 text-[15px] font-medium text-white"
+        >
+          新建
+        </Link>
+      </div>
+      <p
+        className="animate-rise mt-2 max-w-xl text-[15px] leading-relaxed text-[var(--secondary-label)] sm:text-[17px]"
+        style={{ animationDelay: "60ms" }}
+      >
+        很同意与很反对按比例混排，避免一边过多或过少。写操作需登录。
+      </p>
+
+      <div className="mt-8 sm:mt-10">
+        <InstanceList rows={rows} />
+      </div>
+
+      <Pagination
+        page={Math.min(page, totalPages)}
+        totalPages={totalPages}
+        hrefForPage={(p) => (p <= 1 ? "/" : `/?page=${p}`)}
+      />
+    </main>
+  );
+}
+
+export default function HomePage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="mx-auto max-w-3xl px-5 py-16 text-[var(--secondary-label)]">
+          加载中…
+        </main>
+      }
+    >
+      <HomeContent />
+    </Suspense>
   );
 }

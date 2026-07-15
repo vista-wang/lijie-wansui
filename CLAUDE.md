@@ -13,7 +13,8 @@ This file is the Claude/Cursor agent entrypoint for this repo. Prefer `AGENT.md`
 - Product: universal web evaluation system.  
 - Public reviews are **anonymous**; backend audit is **real-name**.  
 - **No Supabase runtime yet** — mock auth + mock repositories only.  
-- UI: Apple Human Interface Guidelines.  
+- UI: Apple Human Interface Guidelines；界面文案仅中文。  
+- 敏感词：公开展示打码；管理员维护词库。  
 - If blocked or overthinking: stop, report to user, wait.
 
 ## Project map

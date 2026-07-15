@@ -1,22 +1,22 @@
 import type { User } from "@/lib/types/domain";
 
-/** Local pseudo accounts — replace with Supabase Auth later. */
+/** 本地伪账号 — 之后替换为 Supabase Auth */
 export const MOCK_USERS: readonly User[] = [
   {
     id: "user-alice",
-    displayName: "Alice Chen",
-    email: "alice@example.local",
+    displayName: "陈晓",
+    email: "chenxiao@example.local",
     role: "user",
   },
   {
     id: "user-bob",
-    displayName: "Bob Wang",
-    email: "bob@example.local",
+    displayName: "王强",
+    email: "wangqiang@example.local",
     role: "user",
   },
   {
     id: "user-admin",
-    displayName: "Admin Li",
+    displayName: "李明",
     email: "admin@example.local",
     role: "admin",
   },

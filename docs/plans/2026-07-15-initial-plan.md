@@ -1,10 +1,10 @@
 # Universal Rating System — Initial Plan
 
-> Bootstrap plan for product ownership. Detailed task-by-task plans will be added per feature after user confirmation.
+> Bootstrap + locked rules. Detailed task-by-task plans per feature as needed.
 
 **Goal:** A web app where anyone can evaluate arbitrary instances anonymously in public, while every write is real-name audited in the backend.
 
-**Architecture:** Next.js App Router front-end; repository interfaces for Instance / Rating / Audit / User; mock adapters now, Supabase adapters later; Apple-HIG-inspired UI shell.
+**Architecture:** Next.js App Router; repository interfaces for Instance / Rating / Comment / Audit / User; mock adapters now, Supabase later; Apple-HIG UI.
 
 **Tech Stack:** Next.js 16, React 19, TypeScript, Tailwind CSS v4, local mock auth/storage (Supabase deferred).
 
@@ -13,80 +13,77 @@
 ## 1. Product principles
 
 1. **Universal** — instances are generic subjects (not tied to one vertical in v1).  
-2. **Anonymous public surface** — list/detail show scores & comments without reviewer names.  
-3. **Accountable writes** — create instance, rate, edit, delete require a signed-in (mock) user and append audit events.  
+2. **Anonymous public surface** — scores & comments never show reviewer names.  
+3. **Accountable writes** — create / rate / comment require signed-in user + audit events.  
 4. **Swap-ready storage** — UI talks to interfaces only until Supabase is enabled.
 
-## 2. Phased roadmap
+## 2. Locked rules (user, 2026-07-15)
 
-### Phase 0 — Bootstrap (this commit)
+| Rule | Detail |
+|------|--------|
+| Scoring | Creator picks **one** mode: `scale_10` **or** `binary` |
+| Aggregate | `scale_10` → **mean**; `binary` → **majority** (更多人的一方；平局 `tie`) |
+| Comments | Separate **anonymous comment** system |
+| Account | One real-name identity ↔ one account |
+| Per instance | **One** score row (updatable); **one** comment only |
 
-- Git repository  
-- Next.js + TypeScript + Tailwind environment  
-- `AGENT.md` / `CLAUDE.md`  
-- This plan  
-- Mock auth scaffold + placeholder home  
+Comments always available regardless of scoring mode.
 
-### Phase 1 — Domain & mock data
+## 3. Phased roadmap
 
-- Types: `User`, `Instance`, `Rating`, `AuditEvent`  
-- In-memory / `localStorage` repositories  
-- Seed data for demos  
-- Unit-level sanity for repository contracts  
+### Phase 0 — Bootstrap ✅
 
-### Phase 2 — Core user flows (HIG UI)
+### Phase 1 — Domain & mock data ✅
 
-- Home: browse / search instances  
-- Instance detail: average score, anonymous reviews, rate CTA  
-- Create instance (requires mock login)  
-- Lightweight “who am I” switcher for pseudo accounts  
+- Types aligned with locked rules  
+- Repositories enforce unique `(authorId, instanceId)` for rating & comment  
+- Seed data for both scoring modes  
+- Aggregate: `summarizeScores` (mean / majority)  
 
-### Phase 3 — Admin / audit
+### Phase 2 — Core user flows (HIG UI) ✅
 
-- Authenticated view of real-name audit trail  
-- Filter by actor / entity / action  
+- 全中文界面  
+- 浏览 / 详情 / 新建 / 评分 / 匿名评论  
+- 伪账号切换  
+- 敏感词打码（公开展示）  
+- 管理员：实名审计 + 敏感词词库  
+
+### Phase 3 — Admin / audit ✅（并入 Phase 2）
 
 ### Phase 4 — Supabase (explicit go-ahead only)
 
-- Env + clients  
-- Schema + RLS (public read of anonymized reviews; hide `author_id` from clients)  
-- Replace mock adapters; keep interfaces  
-
-## 3. Suggested data model (draft)
+## 4. Data model (draft)
 
 ```
 users          id, displayName, email, role
-instances      id, title, description, category?, createdBy, createdAt
-ratings        id, instanceId, score, comment?, authorId, createdAt
+instances      id, title, description, scoringMode, category?, createdBy, createdAt
+ratings        id, instanceId, authorId, score, createdAt, updatedAt
+               UNIQUE(authorId, instanceId)
+               score: 1..10 if scale_10; 0|1 if binary
+comments       id, instanceId, authorId, body, createdAt, updatedAt
+               UNIQUE(authorId, instanceId)
 audit_events   id, actorId, action, entityType, entityId, payload?, createdAt
 ```
 
-Public API / UI serializers omit `authorId` on ratings.
+Public serializers omit `authorId` on ratings and comments.
 
-## 4. UI direction (Apple HIG)
+## 5. UI direction (Apple HIG)
 
-- System-like navigation bar, large titles where appropriate  
-- Primary content first; chrome defers  
-- SF-like stack (next: prefer distinctive system-adjacent fonts, not Inter/Roboto defaults)  
-- Light appearance default; respect `prefers-color-scheme` carefully  
+- System-like nav, large titles, deferred chrome  
+- System font stack; restrained color (system blue accent)  
 - Touch targets ≥ 44pt equivalent; clear focus rings  
 
-## 5. Out of scope for v1
+## 6. Out of scope for v1
 
 - Payments, social graph, rich media uploads  
 - Moderation AI, spam scoring  
-- Mobile native apps  
-- Multi-tenant orgs  
-
-## 6. Decision needed before Phase 1 coding
-
-**Scoring scale & instance taxonomy** — see question to user in session.
+- Mobile native apps / multi-tenant orgs  
 
 ---
 
-## Immediate next steps (after user signal)
+## Immediate next steps
 
-1. Lock scoring scale + whether categories are free-form or fixed.  
-2. Implement Phase 1 types + mock repositories.  
-3. Build Phase 2 screens against mock data.  
-4. Pause before any Supabase dependency.
+1. ✅ Mode binding A + binary majority locked.  
+2. Implement Phase 1 types + mock repositories with uniqueness rules.  
+3. Phase 2 screens (after Phase 1).  
+4. Pause before Supabase.

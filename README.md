@@ -1,12 +1,23 @@
-# Universal Rating
+# 理解万岁
 
-网页端通用评价系统。公开评分匿名展示；写操作在后台以实名记入审计。
+> 使用 Cursor 制作
+
+网页端通用评价系统。公开评分与评论不展示作者；写操作在后台以实名记入审计。主页对「很同意 / 很反对」做比例混排推荐。
+
+## 部署（Vercel）
+
+连接本仓库后，Vercel 会自动识别 Next.js（见 `vercel.json`）。本地：
+
+```bash
+npm run build
+npx vercel
+```
 
 ## 当前状态
 
-- Phase 0 脚手架完成（Next.js / TypeScript / Tailwind）
-- 本地伪账号就绪；**尚未接入 Supabase**
-- 产品规则见 [`AGENT.md`](./AGENT.md)，初始计划见 [`docs/plans/2026-07-15-initial-plan.md`](./docs/plans/2026-07-15-initial-plan.md)
+- Phase 2 已完成（全中文 UI、管理员、敏感词打码）
+- 本地伪账号；**尚未接入 Supabase**
+- 规则见 [`AGENT.md`](./AGENT.md)
 
 ## 开发
 
@@ -17,11 +28,14 @@ npm run dev
 
 打开 [http://localhost:3000](http://localhost:3000)。
 
-```bash
-npm run lint
-npm run build
-```
+在「账号」切换伪账号；管理员请选「李明」后可见管理入口。
 
-## 目录
+## 功能摘要
 
-仓库根目录即应用根目录。npm 包名为 `universal-rating`。
+| 能力 | 说明 |
+|------|------|
+| 评分模式 | 创建时二选一：1–10 分（均值）或 赞成/反对（多数） |
+| 评分 | 每账号每实例一条，可改 |
+| 评论 | 匿名展示；每账号每实例一条，不可再发第二条（可改原文） |
+| 敏感词 | 管理员维护；公开标题/描述/评论打码 |
+| 管理 | 实名审计日志 |
