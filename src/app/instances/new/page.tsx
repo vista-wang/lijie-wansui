@@ -40,10 +40,10 @@ export default function NewInstancePage() {
   return (
     <main className="w-full flex-1 pb-10 pt-1 sm:pt-2">
       <h1 className="text-[28px] font-semibold tracking-tight text-[var(--label)] sm:text-[34px]">
-        新建实例
+        发一条评价对象
       </h1>
       <p className="mt-2 text-[17px] text-[var(--secondary-label)]">
-        创建时选定一种评分模式，之后不可混用。
+        可以是一家店、一个议题……选好打分方式后就不能改啦。
       </p>
 
       <form onSubmit={onSubmit} className="mt-8 space-y-5">
@@ -96,7 +96,7 @@ export default function NewInstancePage() {
         )}
 
         <Button type="submit" className="w-full sm:w-auto">
-          创建
+          发布
         </Button>
       </form>
     </main>

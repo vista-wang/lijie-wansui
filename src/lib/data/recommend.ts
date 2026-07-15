@@ -311,9 +311,7 @@ export function buildUserAffinityFeed(input: {
     });
   }
 
-  // 已评价的放后面，方便「发现」未评价内容优先
-  const mixed = mixPools(agree, oppose, filler, options);
-  return mixed;
+  return mixPools(agree, oppose, filler, options);
 }
 
 export function paginateFeed(

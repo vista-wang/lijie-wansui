@@ -221,7 +221,7 @@ export function getHomeRecommendPage(input: {
     description: maskSensitiveText(instance.description, words),
   }));
 
-  const feed = buildUserAffinityFeed({
+  let feed = buildUserAffinityFeed({
     userId: input.userId,
     instances: publicInstances,
     ratings: store.ratings,
@@ -232,6 +232,26 @@ export function getHomeRecommendPage(input: {
       seed: `${todaySeed()}-${input.userId ?? "guest"}`,
     },
   });
+
+  // 超级会员创建的内容轻微前置（新实例优先曝光）
+  const superCreators = new Set(
+    store.memberships
+      .filter(
+        (m) =>
+          m.tier === "super" &&
+          (!m.expiresAt || new Date(m.expiresAt).getTime() > Date.now()),
+      )
+      .map((m) => m.userId),
+  );
+  if (superCreators.size > 0) {
+    const boosted = feed.filter((item) =>
+      superCreators.has(item.instance.createdBy),
+    );
+    const rest = feed.filter(
+      (item) => !superCreators.has(item.instance.createdBy),
+    );
+    feed = [...boosted.slice(0, 3), ...rest, ...boosted.slice(3)];
+  }
 
   return paginateFeed(feed, input.page, input.pageSize ?? 6);
 }

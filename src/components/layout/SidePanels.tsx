@@ -6,6 +6,7 @@
  */
 
 import Link from "next/link";
+import { AdSlot } from "@/components/ads/AdSlot";
 import { getSidebarPanels } from "@/lib/data/repositories";
 import { useStoreRevision } from "@/lib/data/use-store-revision";
 import { useClientReady } from "@/lib/hooks/useClientReady";
@@ -47,7 +48,9 @@ export function LeftSidePanel() {
 
   return (
     <div className="space-y-4 animate-rise">
-      <Panel title="热门排行">
+      <AdSlot placement="sidebar" />
+
+      <Panel title="大家都在看">
         <ol className="space-y-2.5">
           {hot.map((item, index) => (
             <li key={item.id}>
@@ -81,7 +84,7 @@ export function LeftSidePanel() {
         </ol>
       </Panel>
 
-      <Panel title="分类速览">
+      <Panel title="按类型逛">
         <ul className="space-y-2">
           {categories.map((item) => (
             <li key={item.category}>
@@ -113,7 +116,7 @@ export function RightSidePanel() {
 
   return (
     <div className="space-y-4 animate-rise" style={{ animationDelay: "80ms" }}>
-      <Panel title="最新实例">
+      <Panel title="新鲜出炉">
         <ul className="space-y-2.5">
           {recent.map((item) => (
             <li key={item.id}>
@@ -133,7 +136,7 @@ export function RightSidePanel() {
         </ul>
       </Panel>
 
-      <Panel title="讨论活跃">
+      <Panel title="聊得火热">
         <ul className="space-y-2">
           {rising.map((item) => (
             <li key={item.id}>
@@ -153,10 +156,16 @@ export function RightSidePanel() {
         </ul>
       </Panel>
 
-      <Panel title="小提示">
+      <Panel title="小贴士">
         <p className="text-[13px] leading-relaxed text-[var(--secondary-label)]">
-          多评几条，主页推荐会更贴合你的口味。公开端不展示作者身份。
+          多评几条，首页会更懂你。你的名字不会出现在公开评价里。
         </p>
+        <Link
+          href="/feedback"
+          className="mt-3 inline-block text-[13px] font-medium text-[var(--system-blue)]"
+        >
+          有想法？去反馈
+        </Link>
       </Panel>
     </div>
   );

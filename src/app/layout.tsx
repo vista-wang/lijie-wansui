@@ -13,7 +13,7 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "理解万岁",
   description:
-    "通用评价系统：推荐混排、公开评分与评论，后台实名审计。使用 Cursor 制作。",
+    "理解万岁：看看大家怎么说，按你的口味发现内容。使用 Cursor 制作。",
   other: {
     generator: "使用 Cursor 制作",
   },

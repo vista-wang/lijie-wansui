@@ -14,10 +14,10 @@ export default function RecordsPage() {
   return (
     <main className="w-full flex-1 pb-10 pt-1 sm:pt-2">
       <h1 className="text-[28px] font-semibold tracking-tight text-[var(--label)] sm:text-[34px]">
-        记录
+        我的足迹
       </h1>
       <p className="mt-2 text-[15px] text-[var(--secondary-label)] sm:text-[17px]">
-        你在本机伪账号下的评分与评论记录。
+        你点评过、留言过的内容都在这里。
       </p>
 
       {!user && (

@@ -33,10 +33,10 @@ function SearchContent({ initialQuery }: { initialQuery: string }) {
   return (
     <main className="w-full flex-1 pb-10 pt-1 sm:pt-2">
       <h1 className="text-[28px] font-semibold tracking-tight text-[var(--label)] sm:text-[34px]">
-        搜索
+        搜一搜
       </h1>
       <p className="mt-2 text-[15px] text-[var(--secondary-label)] sm:text-[17px]">
-        按标题、描述或分类查找实例。
+        输入店名、议题或类型，马上找到你想看的评价。
       </p>
 
       <label className="mt-6 block">
