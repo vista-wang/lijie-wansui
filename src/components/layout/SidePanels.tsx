@@ -6,7 +6,7 @@
  */
 
 import Link from "next/link";
-import { AdSlot } from "@/components/ads/AdSlot";
+import { AdStack } from "@/components/ads/AdSlot";
 import { getSidebarPanels } from "@/lib/data/repositories";
 import { useStoreRevision } from "@/lib/data/use-store-revision";
 import { useClientReady } from "@/lib/hooks/useClientReady";
@@ -48,7 +48,7 @@ export function LeftSidePanel() {
 
   return (
     <div className="space-y-4 animate-rise">
-      <AdSlot placement="sidebar" />
+      <AdStack seed="left-top" count={2} />
 
       <Panel title="大家都在看">
         <ol className="space-y-2.5">
@@ -101,6 +101,8 @@ export function LeftSidePanel() {
           ))}
         </ul>
       </Panel>
+
+      <AdStack seed="left-bottom" count={2} />
     </div>
   );
 }
@@ -116,6 +118,8 @@ export function RightSidePanel() {
 
   return (
     <div className="space-y-4 animate-rise" style={{ animationDelay: "80ms" }}>
+      <AdStack seed="right-top" count={2} />
+
       <Panel title="新鲜出炉">
         <ul className="space-y-2.5">
           {recent.map((item) => (
@@ -158,7 +162,7 @@ export function RightSidePanel() {
 
       <Panel title="小贴士">
         <p className="text-[13px] leading-relaxed text-[var(--secondary-label)]">
-          多评几条，首页会更懂你。你的名字不会出现在公开评价里。
+          多评几条，首页会更懂你。评分和评论都能自己选要不要匿名。
         </p>
         <Link
           href="/feedback"
@@ -167,6 +171,8 @@ export function RightSidePanel() {
           有想法？去反馈
         </Link>
       </Panel>
+
+      <AdStack seed="right-bottom" count={3} />
     </div>
   );
 }

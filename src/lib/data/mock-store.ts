@@ -17,7 +17,7 @@ import type {
   MembershipRecord,
 } from "@/lib/types/membership";
 
-const STORAGE_KEY = "universal-rating.mock-store.v7";
+const STORAGE_KEY = "universal-rating.mock-store.v8";
 
 export interface MockStoreData {
   instances: Instance[];
@@ -104,10 +104,23 @@ function normalizeStore(data: Partial<MockStoreData>): MockStoreData {
         : seeded.sensitiveWords,
     };
   }
+  const ratings = (data.ratings?.length ? data.ratings : seeded.ratings).map(
+    (r) => ({
+      ...r,
+      anonymous: r.anonymous !== false,
+    }),
+  );
+  const comments = (
+    data.comments?.length ? data.comments : seeded.comments
+  ).map((c) => ({
+    ...c,
+    anonymous: c.anonymous !== false,
+  }));
+
   return {
     instances,
-    ratings: data.ratings?.length ? data.ratings : seeded.ratings,
-    comments: data.comments?.length ? data.comments : seeded.comments,
+    ratings,
+    comments,
     auditEvents: data.auditEvents?.length
       ? data.auditEvents
       : seeded.auditEvents,

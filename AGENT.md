@@ -55,11 +55,10 @@ Build **理解万岁**, a web-based universal evaluation system: users can disco
    - Find users with similar polar ratings; recommend unrated items they lean toward  
    - Mix “agree-leaning” and “oppose-leaning” candidates (~50%, clamped 35–65%)  
    - Cold start (guest / no polar ratings): global balanced mix  
-   - Do **not** show sentiment labels in UI  
 
 3. **One rating per account per instance** — may **update** that single score later; cannot add a second rating row.
 
-4. **Anonymous comments** — separate from scores; public surface never shows author identity.
+4. **Optional anonymity** — user chooses per rating/comment whether to show display name publicly; audit always keeps `authorId`.
 
 5. **Per real account, per instance**
    - At most **one** score (updatable).  

@@ -1,3 +1,4 @@
+import { findMockUser } from "@/lib/auth/mock-users";
 import { createId } from "@/lib/data/id";
 import {
   loadMockStore,
@@ -49,14 +50,32 @@ function appendAudit(
   });
 }
 
-function toPublicRating({ authorId, ...rest }: Rating): PublicRating {
-  void authorId;
-  return rest;
+function toPublicRating(rating: Rating): PublicRating {
+  const user = findMockUser(rating.authorId);
+  const anonymous = rating.anonymous !== false;
+  return {
+    id: rating.id,
+    instanceId: rating.instanceId,
+    score: rating.score,
+    anonymous,
+    displayName: anonymous ? null : (user?.displayName ?? "用户"),
+    createdAt: rating.createdAt,
+    updatedAt: rating.updatedAt,
+  };
 }
 
-function toPublicComment({ authorId, ...rest }: Comment): PublicComment {
-  void authorId;
-  return rest;
+function toPublicComment(comment: Comment): PublicComment {
+  const user = findMockUser(comment.authorId);
+  const anonymous = comment.anonymous !== false;
+  return {
+    id: comment.id,
+    instanceId: comment.instanceId,
+    body: comment.body,
+    anonymous,
+    displayName: anonymous ? null : (user?.displayName ?? "用户"),
+    createdAt: comment.createdAt,
+    updatedAt: comment.updatedAt,
+  };
 }
 
 export function listInstances(): Instance[] {
@@ -221,7 +240,7 @@ export function getHomeRecommendPage(input: {
     description: maskSensitiveText(instance.description, words),
   }));
 
-  let feed = buildUserAffinityFeed({
+  const feed = buildUserAffinityFeed({
     userId: input.userId,
     instances: publicInstances,
     ratings: store.ratings,
@@ -232,26 +251,6 @@ export function getHomeRecommendPage(input: {
       seed: `${todaySeed()}-${input.userId ?? "guest"}`,
     },
   });
-
-  // 超级会员创建的内容轻微前置（新实例优先曝光）
-  const superCreators = new Set(
-    store.memberships
-      .filter(
-        (m) =>
-          m.tier === "super" &&
-          (!m.expiresAt || new Date(m.expiresAt).getTime() > Date.now()),
-      )
-      .map((m) => m.userId),
-  );
-  if (superCreators.size > 0) {
-    const boosted = feed.filter((item) =>
-      superCreators.has(item.instance.createdBy),
-    );
-    const rest = feed.filter(
-      (item) => !superCreators.has(item.instance.createdBy),
-    );
-    feed = [...boosted.slice(0, 3), ...rest, ...boosted.slice(3)];
-  }
 
   return paginateFeed(feed, input.page, input.pageSize ?? 6);
 }
@@ -272,11 +271,13 @@ export function upsertRating(input: {
   instanceId: string;
   authorId: string;
   score: number;
+  anonymous?: boolean;
 }): Rating {
   return withStore((store) => {
     const instance = store.instances.find((i) => i.id === input.instanceId);
     if (!instance) throw new Error("未找到该实例");
     assertValidScore(instance.scoringMode, input.score);
+    const anonymous = input.anonymous !== false;
 
     const existing = store.ratings.find(
       (r) =>
@@ -286,6 +287,7 @@ export function upsertRating(input: {
 
     if (existing) {
       existing.score = input.score;
+      existing.anonymous = anonymous;
       existing.updatedAt = updatedAt;
       appendAudit(store, {
         actorId: input.authorId,
@@ -293,7 +295,7 @@ export function upsertRating(input: {
         entityType: "rating",
         entityId: existing.id,
         createdAt: updatedAt,
-        payload: { score: input.score },
+        payload: { score: input.score, anonymous },
       });
       return { ...existing };
     }
@@ -303,6 +305,7 @@ export function upsertRating(input: {
       instanceId: input.instanceId,
       authorId: input.authorId,
       score: input.score,
+      anonymous,
       createdAt: updatedAt,
       updatedAt,
     };
@@ -313,7 +316,7 @@ export function upsertRating(input: {
       entityType: "rating",
       entityId: rating.id,
       createdAt: updatedAt,
-      payload: { score: input.score },
+      payload: { score: input.score, anonymous },
     });
     return rating;
   });
@@ -345,6 +348,7 @@ export function createComment(input: {
   instanceId: string;
   authorId: string;
   body: string;
+  anonymous?: boolean;
 }): Comment {
   return withStore((store) => {
     const instance = store.instances.find((i) => i.id === input.instanceId);
@@ -364,6 +368,7 @@ export function createComment(input: {
       instanceId: input.instanceId,
       authorId: input.authorId,
       body: input.body.trim(),
+      anonymous: input.anonymous !== false,
       createdAt,
       updatedAt: createdAt,
     };
@@ -374,6 +379,7 @@ export function createComment(input: {
       entityType: "comment",
       entityId: comment.id,
       createdAt,
+      payload: { anonymous: comment.anonymous },
     });
     return comment;
   });
@@ -384,6 +390,7 @@ export function updateComment(input: {
   instanceId: string;
   authorId: string;
   body: string;
+  anonymous?: boolean;
 }): Comment {
   return withStore((store) => {
     const existing = store.comments.find(
@@ -394,6 +401,9 @@ export function updateComment(input: {
 
     const updatedAt = nowIso();
     existing.body = input.body.trim();
+    if (input.anonymous !== undefined) {
+      existing.anonymous = input.anonymous;
+    }
     existing.updatedAt = updatedAt;
     appendAudit(store, {
       actorId: input.authorId,
@@ -401,6 +411,7 @@ export function updateComment(input: {
       entityType: "comment",
       entityId: existing.id,
       createdAt: updatedAt,
+      payload: { anonymous: existing.anonymous },
     });
     return { ...existing };
   });

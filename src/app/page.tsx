@@ -1,17 +1,18 @@
 "use client";
 
 /**
- * 理解万岁 · 主页（用户亲和推荐）
+ * 理解万岁 · 主页（用户亲和推荐 + 随机广告穿插）
  * 使用 Cursor 制作
  */
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Suspense } from "react";
+import { Suspense, useMemo } from "react";
 import { AdSlot } from "@/components/ads/AdSlot";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { InstanceList } from "@/components/instances/InstanceList";
 import { Pagination } from "@/components/ui/Pagination";
+import { weaveAdsIntoFeed } from "@/lib/data/ads";
 import { getHomeRecommendPage } from "@/lib/data/repositories";
 import { useStoreRevision } from "@/lib/data/use-store-revision";
 import { useClientReady } from "@/lib/hooks/useClientReady";
@@ -23,12 +24,34 @@ function HomeContent() {
   const ready = useClientReady();
   useStoreRevision();
   const { user } = useAuth();
-  const { tier, label } = useMembership();
+  const { tier, label, showAds } = useMembership();
   const searchParams = useSearchParams();
   const rawPage = Number(searchParams.get("page") || "1");
   const page = Number.isFinite(rawPage) && rawPage > 0 ? Math.floor(rawPage) : 1;
 
-  if (!ready) {
+  const result = ready
+    ? getHomeRecommendPage({
+        userId: user?.id ?? null,
+        page,
+        pageSize: PAGE_SIZE,
+      })
+    : null;
+
+  const feed = useMemo(() => {
+    if (!result) return [];
+    if (!showAds) {
+      return result.rows.map((data) => ({
+        kind: "content" as const,
+        data,
+      }));
+    }
+    return weaveAdsIntoFeed(
+      result.rows,
+      `home-${page}-${user?.id ?? "guest"}-${new Date().toISOString().slice(0, 10)}`,
+    );
+  }, [result, showAds, page, user?.id]);
+
+  if (!ready || !result) {
     return (
       <main className="w-full flex-1 pb-10 pt-1 sm:pt-2">
         <h1 className="text-[28px] font-semibold tracking-tight text-[var(--label)] sm:text-[34px]">
@@ -41,15 +64,7 @@ function HomeContent() {
     );
   }
 
-  const { rows, totalPages, page: current } = getHomeRecommendPage({
-    userId: user?.id ?? null,
-    page,
-    pageSize: PAGE_SIZE,
-  });
-
-  const mid = Math.min(3, rows.length);
-  const first = rows.slice(0, mid);
-  const rest = rows.slice(mid);
+  const { totalPages, page: current } = result;
 
   return (
     <main className="w-full flex-1 pb-10 pt-1 sm:pt-2">
@@ -81,9 +96,21 @@ function HomeContent() {
       </p>
 
       <div className="mt-8 space-y-3 sm:mt-10">
-        <InstanceList rows={first} />
-        <AdSlot placement="feed" />
-        {rest.length > 0 && <InstanceList rows={rest} animated={false} />}
+        {feed.map((entry, index) =>
+          entry.kind === "ad" ? (
+            <AdSlot
+              key={`ad-${index}-${entry.ad.id}`}
+              creative={entry.ad}
+              seed={`home-inline-${index}`}
+            />
+          ) : (
+            <InstanceList
+              key={entry.data.instance.id}
+              rows={[entry.data]}
+              animated={index < 4}
+            />
+          ),
+        )}
       </div>
 
       <Pagination

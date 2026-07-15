@@ -22,28 +22,28 @@ export interface Instance {
 
 /**
  * One rating per (authorId, instanceId). Score may be updated.
- * scale_10: 1–10; binary: 0 (oppose) | 1 (approve).
+ * anonymous=true 时公开不显示姓名；后台审计仍保留 authorId。
  */
 export interface Rating {
   id: string;
   instanceId: string;
   score: number;
-  /** Stored for audit only; never shown on public surfaces. */
   authorId: string;
+  anonymous: boolean;
   createdAt: string;
   updatedAt: string;
 }
 
 /**
  * One comment per (authorId, instanceId). No second comment.
- * Body may be edited on the same row.
+ * anonymous 由用户自选。
  */
 export interface Comment {
   id: string;
   instanceId: string;
   body: string;
-  /** Stored for audit only; never shown on public surfaces. */
   authorId: string;
+  anonymous: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -74,7 +74,6 @@ export type InstanceScoreSummary =
   | {
       mode: "scale_10";
       count: number;
-      /** Null when no ratings. */
       average: number | null;
     }
   | {
@@ -82,9 +81,25 @@ export type InstanceScoreSummary =
       count: number;
       approveCount: number;
       opposeCount: number;
-      /** Side with more votes; tie when equal (including 0–0). */
       majority: "approve" | "oppose" | "tie";
     };
 
-export type PublicRating = Omit<Rating, "authorId">;
-export type PublicComment = Omit<Comment, "authorId">;
+export type PublicRating = {
+  id: string;
+  instanceId: string;
+  score: number;
+  anonymous: boolean;
+  displayName: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type PublicComment = {
+  id: string;
+  instanceId: string;
+  body: string;
+  anonymous: boolean;
+  displayName: string | null;
+  createdAt: string;
+  updatedAt: string;
+};

@@ -2,6 +2,7 @@
 
 import { useSearchParams } from "next/navigation";
 import { Suspense, useMemo, useState } from "react";
+import { AdSlot, AdStack } from "@/components/ads/AdSlot";
 import { InstanceList } from "@/components/instances/InstanceList";
 import {
   getInstanceScoreSummary,
@@ -52,8 +53,16 @@ function SearchContent({ initialQuery }: { initialQuery: string }) {
         />
       </label>
 
+      <div className="mt-6">
+        <AdSlot seed="search-top" />
+      </div>
+
       <div className="mt-8">
         <InstanceList rows={rows} />
+      </div>
+
+      <div className="mt-8">
+        <AdStack seed="search-bottom" count={2} />
       </div>
     </main>
   );

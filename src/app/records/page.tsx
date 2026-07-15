@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { AdSlot, AdStack } from "@/components/ads/AdSlot";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { listMyRecords } from "@/lib/data/repositories";
 import { useStoreRevision } from "@/lib/data/use-store-revision";
@@ -19,6 +20,10 @@ export default function RecordsPage() {
       <p className="mt-2 text-[15px] text-[var(--secondary-label)] sm:text-[17px]">
         你点评过、留言过的内容都在这里。
       </p>
+
+      <div className="mt-6">
+        <AdSlot seed="records-top" />
+      </div>
 
       {!user && (
         <p className="mt-10 rounded-2xl bg-[var(--grouped-background)] px-5 py-8 text-[15px] text-[var(--secondary-label)]">
@@ -58,6 +63,10 @@ export default function RecordsPage() {
           )}
         </ul>
       )}
+
+      <div className="mt-8">
+        <AdStack seed="records-bottom" count={2} />
+      </div>
     </main>
   );
 }

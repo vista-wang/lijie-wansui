@@ -6,46 +6,75 @@
  */
 
 import Link from "next/link";
+import {
+  pickAds,
+  toneClass,
+  type AdCreative,
+} from "@/lib/data/ads";
 import { useMembership } from "@/lib/hooks/useMembership";
 
 export function AdSlot({
-  placement = "banner",
+  seed = "default",
+  compact = false,
+  creative,
 }: {
-  placement?: "banner" | "sidebar" | "feed";
+  seed?: string;
+  compact?: boolean;
+  creative?: AdCreative;
 }) {
   const { showAds, ready } = useMembership();
   if (!ready || !showAds) return null;
 
-  const compact = placement === "sidebar";
+  const ad = creative ?? pickAds(1, seed)[0];
 
   return (
     <aside
-      className={`relative overflow-hidden rounded-2xl border border-dashed border-[var(--separator)] bg-[color-mix(in_srgb,var(--grouped-background)_88%,var(--system-blue))] ${
+      className={`relative overflow-hidden rounded-2xl border border-[var(--separator)]/80 ${toneClass(ad.tone)} ${
         compact ? "p-3" : "p-4"
       }`}
       aria-label="广告"
     >
-      <p className="text-[11px] font-medium uppercase tracking-wider text-[var(--secondary-label)]">
-        广告
-      </p>
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-[11px] font-medium text-[var(--secondary-label)]">
+          赞助内容
+        </p>
+        <Link
+          href="/membership"
+          className="text-[11px] text-[var(--secondary-label)] underline-offset-2 hover:underline"
+        >
+          去广告
+        </Link>
+      </div>
       <p
-        className={`mt-1 font-semibold text-[var(--label)] ${
+        className={`mt-1.5 font-semibold text-[var(--label)] ${
           compact ? "text-[14px]" : "text-[16px]"
         }`}
       >
-        {placement === "feed"
-          ? "发现更多好去处"
-          : "本地生活精选合作"}
+        {ad.title}
       </p>
       <p className="mt-1 text-[12px] leading-relaxed text-[var(--secondary-label)]">
-        演示广告位。开通会员后可关闭此类展示。
+        {ad.body}
       </p>
       <Link
-        href="/membership"
+        href={ad.href}
         className="mt-3 inline-flex text-[13px] font-medium text-[var(--system-blue)]"
       >
-        去广告 · 了解会员
+        {ad.cta} →
       </Link>
     </aside>
+  );
+}
+
+/** 侧栏一次多条、顺序随机 */
+export function AdStack({ seed, count = 2 }: { seed: string; count?: number }) {
+  const { showAds, ready } = useMembership();
+  if (!ready || !showAds) return null;
+  const ads = pickAds(count, seed);
+  return (
+    <div className="space-y-3">
+      {ads.map((ad) => (
+        <AdSlot key={`${seed}-${ad.id}`} creative={ad} compact seed={seed} />
+      ))}
+    </div>
   );
 }
