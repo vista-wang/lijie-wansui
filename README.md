@@ -24,4 +24,4 @@ npm run build
 
 ## 目录
 
-应用根目录为本文件夹 `universal-rating/`（父目录名含中文，不适合作为 npm 包名）。
+仓库根目录即应用根目录。npm 包名为 `universal-rating`。

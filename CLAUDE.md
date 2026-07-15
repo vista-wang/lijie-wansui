@@ -6,7 +6,7 @@ This file is the Claude/Cursor agent entrypoint for this repo. Prefer `AGENT.md`
 
 1. Read `AGENT.md`.  
 2. Read the latest plan under `docs/plans/` if the task is multi-step.  
-3. Stay inside `universal-rating/` as the app root.
+3. App root is the repository root.
 
 ## Hard constraints
 
@@ -19,7 +19,7 @@ This file is the Claude/Cursor agent entrypoint for this repo. Prefer `AGENT.md`
 ## Project map
 
 ```
-universal-rating/
+.
   AGENT.md                 # product + agent rules
   CLAUDE.md                # this checklist
   docs/plans/              # plans & design notes

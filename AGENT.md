@@ -40,8 +40,8 @@ Build a **web-based universal evaluation system**: users can discover or create 
 | Auth (later) | Supabase Auth |
 | Data (now) | Local mock store behind repository interfaces |
 | Data (later) | Supabase Postgres + RLS |
-| Package name | `universal-rating` |
-| App root | `universal-rating/` (parent folder name is not npm-safe) |
+| Package name | `universal-rating` (npm-safe; workspace folder may differ) |
+| App root | repository root |
 
 ## Domain Sketch (provisional)
 
@@ -63,7 +63,6 @@ Interfaces live under `src/lib/`; UI must not import Supabase clients directly u
 ## Commands
 
 ```bash
-cd universal-rating
 npm install
 npm run dev      # http://localhost:3000
 npm run lint
