@@ -15,6 +15,10 @@ import type {
   Rating,
   ScoringMode,
 } from "@/lib/types/domain";
+import {
+  MEMBERSHIP_RECOMMEND_WEIGHT,
+  type MembershipTier,
+} from "@/lib/types/membership";
 
 export type Sentiment = "agree" | "oppose" | "neutral";
 
@@ -30,6 +34,17 @@ export interface RecommendOptions {
   maxShare?: number;
   pageSize?: number;
   seed?: string;
+  /** 实例创建者的会员档位，用于推荐加权 */
+  creatorTierByUserId?: ReadonlyMap<string, MembershipTier>;
+}
+
+function creatorWeight(
+  creatorId: string,
+  tiers?: ReadonlyMap<string, MembershipTier>,
+): number {
+  if (!tiers) return 1;
+  const tier = tiers.get(creatorId) ?? "free";
+  return MEMBERSHIP_RECOMMEND_WEIGHT[tier] ?? 1;
 }
 
 /** 将用户对某实例的打分映射为极性 */
@@ -179,6 +194,7 @@ function summarizeMap(
 
 /**
  * 冷启动：无登录或无极化评分时，用全局高低分实例做比例混排。
+ * 会员创建的内容额外加权，优先进入同意/反对池。
  */
 function coldStartFeed(
   instances: readonly Instance[],
@@ -189,6 +205,12 @@ function coldStartFeed(
   const agree: RecommendItem[] = [];
   const oppose: RecommendItem[] = [];
   const filler: RecommendItem[] = [];
+  const tiers = options.creatorTierByUserId;
+
+  type Weighted = RecommendItem & { weight: number };
+  const agreeW: Weighted[] = [];
+  const opposeW: Weighted[] = [];
+  const fillerW: Weighted[] = [];
 
   for (const instance of instances) {
     const summary = summaries.get(instance.id) ?? null;
@@ -201,11 +223,25 @@ function coldStartFeed(
       if (margin >= 2 && summary.majority === "approve") sentiment = "agree";
       if (margin >= 2 && summary.majority === "oppose") sentiment = "oppose";
     }
-    const item = { instance, summary, sentiment };
-    if (sentiment === "agree") agree.push(item);
-    else if (sentiment === "oppose") oppose.push(item);
-    else filler.push(item);
+    const item = {
+      instance,
+      summary,
+      sentiment,
+      weight: creatorWeight(instance.createdBy, tiers),
+    };
+    if (sentiment === "agree") agreeW.push(item);
+    else if (sentiment === "oppose") opposeW.push(item);
+    else fillerW.push(item);
   }
+
+  const byWeightDesc = (a: Weighted, b: Weighted) => b.weight - a.weight;
+  agreeW.sort(byWeightDesc);
+  opposeW.sort(byWeightDesc);
+  fillerW.sort(byWeightDesc);
+
+  for (const row of agreeW) agree.push(row);
+  for (const row of opposeW) oppose.push(row);
+  for (const row of fillerW) filler.push(row);
 
   return mixPools(agree, oppose, filler, options);
 }
@@ -240,18 +276,29 @@ export function buildUserAffinityFeed(input: {
   }
   sims.sort((a, b) => b.sim - a.sim);
 
-  // 物以类聚：同类用户的同意/反对加权
+  // 物以类聚：同类用户的同意/反对加权（再乘创建者会员权重）
   const agreeScore = new Map<string, number>();
   const opposeScore = new Map<string, number>();
+  const tiers = options.creatorTierByUserId;
 
   for (const { userId, sim } of sims) {
     const polar = polars.get(userId)!;
     for (const [instanceId, value] of polar) {
       if (rated.has(instanceId)) continue;
+      const instance = instanceMap.get(instanceId);
+      const boost = instance
+        ? creatorWeight(instance.createdBy, tiers)
+        : 1;
       if (value === 1) {
-        agreeScore.set(instanceId, (agreeScore.get(instanceId) ?? 0) + sim);
+        agreeScore.set(
+          instanceId,
+          (agreeScore.get(instanceId) ?? 0) + sim * boost,
+        );
       } else {
-        opposeScore.set(instanceId, (opposeScore.get(instanceId) ?? 0) + sim);
+        opposeScore.set(
+          instanceId,
+          (opposeScore.get(instanceId) ?? 0) + sim * boost,
+        );
       }
     }
   }
@@ -269,11 +316,18 @@ export function buildUserAffinityFeed(input: {
   for (const instance of input.instances) {
     if (rated.has(instance.id)) continue;
     if (!instance.category) continue;
+    const boost = creatorWeight(instance.createdBy, tiers);
     if (likedCategories.has(instance.category)) {
-      agreeScore.set(instance.id, (agreeScore.get(instance.id) ?? 0) + 0.35);
+      agreeScore.set(
+        instance.id,
+        (agreeScore.get(instance.id) ?? 0) + 0.35 * boost,
+      );
     }
     if (dislikedCategories.has(instance.category)) {
-      opposeScore.set(instance.id, (opposeScore.get(instance.id) ?? 0) + 0.35);
+      opposeScore.set(
+        instance.id,
+        (opposeScore.get(instance.id) ?? 0) + 0.35 * boost,
+      );
     }
   }
 
@@ -287,6 +341,10 @@ export function buildUserAffinityFeed(input: {
     ...opposeScore.keys(),
   ]);
 
+  type Scored = { item: RecommendItem; score: number };
+  const agreeScored: Scored[] = [];
+  const opposeScored: Scored[] = [];
+
   for (const instanceId of candidates) {
     const instance = instanceMap.get(instanceId);
     if (!instance) continue;
@@ -294,22 +352,39 @@ export function buildUserAffinityFeed(input: {
     const o = opposeScore.get(instanceId) ?? 0;
     const summary = summaries.get(instanceId) ?? null;
     if (a >= o + 0.2) {
-      agree.push({ instance, summary, sentiment: "agree" });
+      agreeScored.push({
+        item: { instance, summary, sentiment: "agree" },
+        score: a,
+      });
       used.add(instanceId);
     } else if (o >= a + 0.2) {
-      oppose.push({ instance, summary, sentiment: "oppose" });
+      opposeScored.push({
+        item: { instance, summary, sentiment: "oppose" },
+        score: o,
+      });
       used.add(instanceId);
     }
   }
 
+  agreeScored.sort((x, y) => y.score - x.score);
+  opposeScored.sort((x, y) => y.score - x.score);
+  for (const row of agreeScored) agree.push(row.item);
+  for (const row of opposeScored) oppose.push(row.item);
+
+  const fillerScored: Scored[] = [];
   for (const instance of input.instances) {
     if (rated.has(instance.id) || used.has(instance.id)) continue;
-    filler.push({
-      instance,
-      summary: summaries.get(instance.id) ?? null,
-      sentiment: "neutral",
+    fillerScored.push({
+      item: {
+        instance,
+        summary: summaries.get(instance.id) ?? null,
+        sentiment: "neutral",
+      },
+      score: creatorWeight(instance.createdBy, tiers),
     });
   }
+  fillerScored.sort((x, y) => y.score - x.score);
+  for (const row of fillerScored) filler.push(row.item);
 
   return mixPools(agree, oppose, filler, options);
 }

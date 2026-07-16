@@ -12,7 +12,7 @@ This file is the Claude/Cursor agent entrypoint for this repo. Prefer `AGENT.md`
 
 - Product: universal web evaluation system.  
 - Public reviews are **anonymous**; backend audit is **real-name**.  
-- **No Supabase runtime yet** — mock auth + mock repositories only.  
+- **Supabase Auth enabled** — email/password + unique real name; content repos may still be mock.  
 - UI: Apple Human Interface Guidelines；界面文案仅中文。  
 - 敏感词：公开展示打码；管理员维护词库。  
 - If blocked or overthinking: stop, report to user, wait.
@@ -24,9 +24,11 @@ This file is the Claude/Cursor agent entrypoint for this repo. Prefer `AGENT.md`
   AGENT.md                 # product + agent rules
   CLAUDE.md                # this checklist
   docs/plans/              # plans & design notes
+  supabase/migrations/     # Postgres schema + RLS
   src/app/                 # Next.js App Router pages
   src/components/          # UI components
-  src/lib/auth/            # mock auth (Supabase later)
+  src/lib/auth/            # auth helpers + messages
+  src/lib/supabase/        # Supabase clients
   src/lib/data/            # repository interfaces + mock stores
   src/lib/types/           # shared domain types
 ```
@@ -35,7 +37,7 @@ This file is the Claude/Cursor agent entrypoint for this repo. Prefer `AGENT.md`
 
 | Do | Don’t |
 |----|-------|
-| Keep adapters behind interfaces | Call Supabase from components now |
+| Keep adapters behind interfaces | Call Supabase from random UI without auth layer |
 | Match Apple HIG spacing/type | Ship generic purple SaaS chrome |
 | Ask before changing product rules | Invent scoring policy unilaterally |
 | Small commits when asked | Commit unprompted / commit `.env` |

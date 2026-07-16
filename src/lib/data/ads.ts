@@ -16,6 +16,14 @@ export type AdCreative = {
 
 export const AD_CREATIVES: readonly AdCreative[] = [
   {
+    id: "ad-aiwriter",
+    title: "AIWriter · AI 小说写作",
+    body: "网页端 AI 小说写作框架，从构思到成章一站式开写。使用 Cursor 制作。",
+    cta: "立即体验",
+    href: "https://aiw.ethan128.top",
+    tone: "blue",
+  },
+  {
     id: "ad-life-1",
     title: "周末探店指南",
     body: "附近好评小店合集，点开看看合不合你口味。",
@@ -81,6 +89,9 @@ export const AD_CREATIVES: readonly AdCreative[] = [
   },
 ] as const;
 
+/** 站内自带合作广告，始终进入投放池首位 */
+export const PINNED_AD_IDS = ["ad-aiwriter"] as const;
+
 function hashSeed(seed: string): number {
   let h = 2166136261;
   for (let i = 0; i < seed.length; i++) {
@@ -101,14 +112,20 @@ function mulberry32(seed: number) {
 
 export function pickAds(count: number, seed: string): AdCreative[] {
   const rand = mulberry32(hashSeed(seed));
-  const pool = [...AD_CREATIVES];
+  const pinned = AD_CREATIVES.filter((ad) =>
+    (PINNED_AD_IDS as readonly string[]).includes(ad.id),
+  );
+  const pool = AD_CREATIVES.filter(
+    (ad) => !(PINNED_AD_IDS as readonly string[]).includes(ad.id),
+  );
   for (let i = pool.length - 1; i > 0; i--) {
     const j = Math.floor(rand() * (i + 1));
     [pool[i], pool[j]] = [pool[j], pool[i]];
   }
+  const ordered = [...pinned, ...pool];
   const out: AdCreative[] = [];
   for (let i = 0; i < count; i++) {
-    out.push(pool[i % pool.length]);
+    out.push(ordered[i % ordered.length]);
   }
   return out;
 }

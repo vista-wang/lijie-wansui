@@ -33,13 +33,20 @@ export interface Announcement {
   createdAt: string;
 }
 
+/** 会员内容在推荐中的加权系数（创建者档位） */
+export const MEMBERSHIP_RECOMMEND_WEIGHT: Record<MembershipTier, number> = {
+  free: 1,
+  plus: 1.35,
+  super: 1.85,
+};
+
 export const MEMBERSHIP_PLANS = [
   {
     tier: "plus" as const,
     name: "高级会员",
     priceYuan: 10,
     period: "月",
-    highlights: ["免除广告", "反馈优先处理"],
+    highlights: ["免除广告", "反馈优先处理", "推荐算法加权"],
   },
   {
     tier: "super" as const,
@@ -47,9 +54,9 @@ export const MEMBERSHIP_PLANS = [
     priceYuan: 20,
     period: "月",
     highlights: [
-      "免除广告",
+      "高级会员的全部内容",
+      "更强的推荐算法加权",
       "反馈最高优先级",
-      "推荐算法加权",
       "专属身份徽章",
       "超级专属公告",
     ],

@@ -1,71 +1,153 @@
 "use client";
 
+/**
+ * 理解万岁 · 登录态（Supabase Auth）
+ * 使用 Cursor 制作
+ */
+
 import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
-  useSyncExternalStore,
+  useState,
 } from "react";
 import {
-  getMockSessionUser,
-  listMockUsers,
-  signInMockUser,
-  signOutMockUser,
-} from "@/lib/auth/mock-session";
+  mapAuthError,
+  REAL_NAME_HINT,
+  REAL_NAME_TAKEN_HINT,
+} from "@/lib/auth/messages";
+import {
+  checkRealNameAvailable,
+  fetchCurrentProfile,
+} from "@/lib/auth/profile";
+import { createClient } from "@/lib/supabase/client";
+import { isSupabaseConfigured } from "@/lib/supabase/env";
 import type { User } from "@/lib/types/domain";
-
-const AUTH_EVENT = "universal-rating-auth";
-
-function subscribe(onChange: () => void) {
-  const handler = () => onChange();
-  window.addEventListener(AUTH_EVENT, handler);
-  window.addEventListener("storage", handler);
-  return () => {
-    window.removeEventListener(AUTH_EVENT, handler);
-    window.removeEventListener("storage", handler);
-  };
-}
-
-function getSnapshot(): User | null {
-  return getMockSessionUser();
-}
-
-function getServerSnapshot(): User | null {
-  return null;
-}
-
-function emitAuthChange() {
-  window.dispatchEvent(new Event(AUTH_EVENT));
-}
 
 interface AuthContextValue {
   user: User | null;
   ready: boolean;
-  users: readonly User[];
-  signIn: (userId: string) => void;
-  signOut: () => void;
+  configured: boolean;
+  signIn: (email: string, password: string) => Promise<void>;
+  signUp: (input: {
+    email: string;
+    password: string;
+    realName: string;
+  }) => Promise<{ needsEmailConfirm: boolean }>;
+  signOut: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const user = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
-  const users = listMockUsers();
+  const [user, setUser] = useState<User | null>(null);
+  const [ready, setReady] = useState(false);
+  const configured = isSupabaseConfigured();
 
-  const signIn = useCallback((userId: string) => {
-    signInMockUser(userId);
-    emitAuthChange();
-  }, []);
+  useEffect(() => {
+    let cancelled = false;
 
-  const signOut = useCallback(() => {
-    signOutMockUser();
-    emitAuthChange();
-  }, []);
+    if (!configured) {
+      const t = window.setTimeout(() => {
+        if (cancelled) return;
+        setUser(null);
+        setReady(true);
+      }, 0);
+      return () => {
+        cancelled = true;
+        window.clearTimeout(t);
+      };
+    }
+
+    const supabase = createClient();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      void (async () => {
+        if (cancelled) return;
+        if (!session) {
+          setUser(null);
+          setReady(true);
+          return;
+        }
+        try {
+          const profile = await fetchCurrentProfile();
+          if (!cancelled) setUser(profile);
+        } catch {
+          if (!cancelled) setUser(null);
+        } finally {
+          if (!cancelled) setReady(true);
+        }
+      })();
+    });
+
+    return () => {
+      cancelled = true;
+      subscription.unsubscribe();
+    };
+  }, [configured]);
+
+  const signIn = useCallback(
+    async (email: string, password: string) => {
+      if (!configured) throw new Error("Supabase 未配置");
+      const supabase = createClient();
+      const { error } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password,
+      });
+      if (error) throw new Error(mapAuthError(error.message));
+    },
+    [configured],
+  );
+
+  const signUp = useCallback(
+    async (input: { email: string; password: string; realName: string }) => {
+      if (!configured) throw new Error("Supabase 未配置");
+      const realName = input.realName.trim();
+      if (!realName) throw new Error(REAL_NAME_HINT);
+
+      const available = await checkRealNameAvailable(realName);
+      if (!available) {
+        throw new Error(`真实姓名已被占用。${REAL_NAME_TAKEN_HINT}`);
+      }
+
+      const supabase = createClient();
+      const { data, error } = await supabase.auth.signUp({
+        email: input.email.trim(),
+        password: input.password,
+        options: {
+          data: { real_name: realName },
+        },
+      });
+      if (error) throw new Error(mapAuthError(error.message));
+
+      return { needsEmailConfirm: !data.session };
+    },
+    [configured],
+  );
+
+  const signOut = useCallback(async () => {
+    if (!configured) {
+      setUser(null);
+      return;
+    }
+    const supabase = createClient();
+    await supabase.auth.signOut();
+  }, [configured]);
 
   const value = useMemo(
-    () => ({ user, ready: true, users, signIn, signOut }),
-    [user, users, signIn, signOut],
+    () => ({
+      user,
+      ready,
+      configured,
+      signIn,
+      signUp,
+      signOut,
+    }),
+    [user, ready, configured, signIn, signUp, signOut],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

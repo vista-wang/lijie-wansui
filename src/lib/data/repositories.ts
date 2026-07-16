@@ -23,6 +23,7 @@ import type {
   Rating,
   ScoringMode,
 } from "@/lib/types/domain";
+import type { MembershipTier } from "@/lib/types/membership";
 
 function nowIso(): string {
   return new Date().toISOString();
@@ -240,6 +241,13 @@ export function getHomeRecommendPage(input: {
     description: maskSensitiveText(instance.description, words),
   }));
 
+  const creatorTierByUserId = new Map<string, MembershipTier>();
+  for (const m of store.memberships) {
+    if (m.tier === "free") continue;
+    if (m.expiresAt && new Date(m.expiresAt).getTime() < Date.now()) continue;
+    creatorTierByUserId.set(m.userId, m.tier);
+  }
+
   const feed = buildUserAffinityFeed({
     userId: input.userId,
     instances: publicInstances,
@@ -249,6 +257,7 @@ export function getHomeRecommendPage(input: {
       minShare: 0.35,
       maxShare: 0.65,
       seed: `${todaySeed()}-${input.userId ?? "guest"}`,
+      creatorTierByUserId,
     },
   });
 

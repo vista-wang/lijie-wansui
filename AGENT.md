@@ -14,7 +14,8 @@ Build **理解万岁**, a web-based universal evaluation system: users can disco
 
 2. **Auth & storage**  
    - Target: Supabase Auth + Postgres.  
-   - **Current phase: Supabase is disabled.** Use local mock accounts and in-memory / local persistence adapters behind the same interfaces so Supabase can be swapped in later without rewriting UI.
+   - **Supabase is enabled** (`NEXT_PUBLIC_SUPABASE_*`). Auth uses real email/password + unique real name.  
+   - Domain content (instances / ratings / comments) still has a local mock repository for bootstrap; schema & RLS already live in `supabase/migrations/`. Swap repositories when ready.
 
 3. **UI**  
    - Follow Apple Human Interface Guidelines: clarity, deference, depth; large readable type; generous spacing; familiar navigation patterns; restrained color; accessible contrast and focus states.
@@ -30,7 +31,7 @@ Build **理解万岁**, a web-based universal evaluation system: users can disco
 - [x] Domain model & mock data layer  
 - [x] Core UI (list / detail / create / rate / comment) — 全中文  
 - [x] Admin / audit + 敏感词打码  
-- [ ] Supabase integration (later, explicit go-ahead)
+- [x] Supabase Auth + schema / RLS（内容仓储仍可走 mock）
 
 ## Tech Stack (decided for bootstrap)
 
@@ -38,10 +39,10 @@ Build **理解万岁**, a web-based universal evaluation system: users can disco
 |-------|--------|
 | Framework | Next.js (App Router) + TypeScript |
 | Styling | Tailwind CSS v4; Apple-HIG-inspired tokens |
-| Auth (now) | Local mock accounts (`src/lib/auth/mock-*`) |
-| Auth (later) | Supabase Auth |
+| Auth (now) | Supabase Auth（邮箱 + 真实姓名） |
+| Auth (seed) | Local mock users 仅作种子评分数据 |
 | Data (now) | Local mock store behind repository interfaces |
-| Data (later) | Supabase Postgres + RLS |
+| Data (schema) | Supabase Postgres + RLS（见 `supabase/migrations/`） |
 | Package name | `universal-rating` (npm-safe; workspace folder may differ) |
 | App root | repository root |
 
@@ -80,7 +81,7 @@ Interfaces live under `src/lib/`; UI must not import Supabase clients directly u
 ## Agent Operating Rules
 
 - Prefer small, reviewable changes; do not expand scope without asking.  
-- Do not enable Supabase packages or env wiring until the user says so.  
+- Supabase Auth is enabled; keep domain repositories behind interfaces until data cutover.  
 - Ask the user when product ambiguity blocks progress; do not invent major product policy.  
 - If stuck > ~2 minutes of fruitless reasoning on one issue: report and wait.  
 - Never commit secrets. Never force-push main. Commit only when asked.

@@ -43,7 +43,7 @@ export function membershipLabel(tier: MembershipTier): string {
   return "普通用户";
 }
 
-/** 伪充值：开通 / 续费 30 天 */
+/** 伪充值：开通 / 续费 30 天（本地 mock + 可选同步 Supabase） */
 export function purchaseMembership(
   userId: string,
   tier: "plus" | "super",
@@ -63,7 +63,30 @@ export function purchaseMembership(
     store.memberships.push({ userId, tier, expiresAt });
   }
   saveMockStore(store);
+
+  void syncMembershipToSupabase(userId, tier, expiresAt);
+
   return tier;
+}
+
+async function syncMembershipToSupabase(
+  userId: string,
+  tier: "plus" | "super",
+  expiresAt: string,
+): Promise<void> {
+  try {
+    const { isSupabaseConfigured } = await import("@/lib/supabase/env");
+    if (!isSupabaseConfigured()) return;
+    const { createClient } = await import("@/lib/supabase/client");
+    const supabase = createClient();
+    await supabase.from("memberships").upsert({
+      user_id: userId,
+      tier,
+      expires_at: expiresAt,
+    });
+  } catch {
+    // 演示充值以本地为准；远端失败不阻断
+  }
 }
 
 function priorityForTier(tier: MembershipTier): FeedbackPriority {

@@ -13,6 +13,29 @@ import {
 } from "@/lib/data/ads";
 import { useMembership } from "@/lib/hooks/useMembership";
 
+function AdCta({ href, children }: { href: string; children: React.ReactNode }) {
+  const external = href.startsWith("http://") || href.startsWith("https://");
+  const className =
+    "mt-3 inline-flex text-[13px] font-medium text-[var(--system-blue)]";
+  if (external) {
+    return (
+      <a
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={className}
+      >
+        {children}
+      </a>
+    );
+  }
+  return (
+    <Link href={href} className={className}>
+      {children}
+    </Link>
+  );
+}
+
 export function AdSlot({
   seed = "default",
   compact = false,
@@ -55,12 +78,9 @@ export function AdSlot({
       <p className="mt-1 text-[12px] leading-relaxed text-[var(--secondary-label)]">
         {ad.body}
       </p>
-      <Link
-        href={ad.href}
-        className="mt-3 inline-flex text-[13px] font-medium text-[var(--system-blue)]"
-      >
+      <AdCta href={ad.href}>
         {ad.cta} →
-      </Link>
+      </AdCta>
     </aside>
   );
 }
