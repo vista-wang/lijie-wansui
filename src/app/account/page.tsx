@@ -78,7 +78,7 @@ export default function AccountPage() {
             </p>
             <p className="mt-3 inline-flex rounded-full bg-[var(--system-blue)]/10 px-3 py-1 text-[13px] font-medium text-[var(--system-blue)]">
               {label}
-              {tier === "super" ? " · 专属徽章" : ""}
+              {tier === "plus" || tier === "super" ? " · 专属徽章" : ""}
             </p>
           </>
         )}

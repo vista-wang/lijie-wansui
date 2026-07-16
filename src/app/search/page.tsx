@@ -62,7 +62,7 @@ function SearchContent({ initialQuery }: { initialQuery: string }) {
       </div>
 
       <div className="mt-8">
-        <AdStack seed="search-bottom" count={2} />
+        <AdStack seed="search-bottom" count={1} />
       </div>
     </main>
   );

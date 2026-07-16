@@ -233,13 +233,8 @@ export default function InstanceDetailPage() {
           全部评论
         </h2>
         <ul className="mt-4 space-y-3">
-          {comments.map((c, index) => (
+          {comments.map((c) => (
             <li key={c.id}>
-              {(index === 1 || index === 4) && (
-                <div className="mb-3">
-                  <AdSlot seed={`detail-c-${id}-${index}`} />
-                </div>
-              )}
               <div className="rounded-2xl bg-[var(--grouped-background)] px-4 py-3">
                 <p className="text-[16px] leading-relaxed text-[var(--label)]">
                   {c.body}
@@ -261,7 +256,7 @@ export default function InstanceDetailPage() {
       </section>
 
       <div className="mt-8 lg:hidden">
-        <AdStack seed={`detail-bottom-${id}`} count={2} />
+        <AdStack seed={`detail-bottom-${id}`} count={1} />
       </div>
     </main>
   );

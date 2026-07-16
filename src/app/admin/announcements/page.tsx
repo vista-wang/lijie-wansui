@@ -60,7 +60,7 @@ export default function AdminAnnouncementsPage() {
         公告管理
       </h1>
       <p className="mt-2 text-[15px] text-[var(--secondary-label)]">
-        发布全站或超级会员专属公告。
+        发布全站公告，或仅超级会员可见的「与开发者交流」内容。
       </p>
 
       <form onSubmit={onSubmit} className="mt-8 space-y-4">
@@ -82,7 +82,7 @@ export default function AdminAnnouncementsPage() {
             checked={superOnly}
             onChange={(e) => setSuperOnly(e.target.checked)}
           />
-          仅超级会员可见
+          与开发者交流（仅超级会员可见）
         </label>
         <Button type="submit">发布</Button>
       </form>
@@ -98,7 +98,7 @@ export default function AdminAnnouncementsPage() {
           >
             <p className="font-semibold text-[var(--label)]">
               {item.title}
-              {item.superOnly ? " · 超级专属" : ""}
+              {item.superOnly ? " · 与开发者交流" : ""}
             </p>
             <p className="mt-1 text-[14px] text-[var(--secondary-label)]">
               {item.body}

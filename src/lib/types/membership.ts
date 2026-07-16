@@ -28,7 +28,7 @@ export interface Announcement {
   id: string;
   title: string;
   body: string;
-  /** 仅超级会员可见的彩蛋公告 */
+  /** 仅超级会员可见（与开发者交流） */
   superOnly?: boolean;
   createdAt: string;
 }
@@ -46,7 +46,12 @@ export const MEMBERSHIP_PLANS = [
     name: "高级会员",
     priceYuan: 10,
     period: "月",
-    highlights: ["免除广告", "反馈优先处理", "推荐算法加权"],
+    highlights: [
+      "免除广告",
+      "反馈优先处理",
+      "推荐算法加权",
+      "专属身份徽章",
+    ],
   },
   {
     tier: "super" as const,
@@ -57,8 +62,7 @@ export const MEMBERSHIP_PLANS = [
       "高级会员的全部内容",
       "更强的推荐算法加权",
       "反馈最高优先级",
-      "专属身份徽章",
-      "超级专属公告",
+      "与开发者交流",
     ],
   },
 ] as const;

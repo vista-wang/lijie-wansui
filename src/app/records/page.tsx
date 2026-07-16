@@ -65,7 +65,7 @@ export default function RecordsPage() {
       )}
 
       <div className="mt-8">
-        <AdStack seed="records-bottom" count={2} />
+        <AdStack seed="records-bottom" count={1} />
       </div>
     </main>
   );

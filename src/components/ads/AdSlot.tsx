@@ -3,10 +3,14 @@
 /**
  * 理解万岁 · 广告位（会员免广告）
  * 使用 Cursor 制作
+ *
+ * 广告获取失败或无效时不渲染，避免空白/报错占位。
  */
 
 import Link from "next/link";
 import {
+  adLabelText,
+  pickOneAd,
   pickAds,
   toneClass,
   type AdCreative,
@@ -36,6 +40,29 @@ function AdCta({ href, children }: { href: string; children: React.ReactNode }) 
   );
 }
 
+function resolveCreative(
+  creative: AdCreative | undefined,
+  seed: string,
+): AdCreative | null {
+  try {
+    if (creative) {
+      if (
+        creative.id &&
+        creative.title?.trim() &&
+        creative.body?.trim() &&
+        creative.cta?.trim() &&
+        creative.href?.trim()
+      ) {
+        return creative;
+      }
+      return null;
+    }
+    return pickOneAd(seed);
+  } catch {
+    return null;
+  }
+}
+
 export function AdSlot({
   seed = "default",
   compact = false,
@@ -48,18 +75,19 @@ export function AdSlot({
   const { showAds, ready } = useMembership();
   if (!ready || !showAds) return null;
 
-  const ad = creative ?? pickAds(1, seed)[0];
+  const ad = resolveCreative(creative, seed);
+  if (!ad) return null;
 
   return (
     <aside
       className={`relative overflow-hidden rounded-2xl border border-[var(--separator)]/80 ${toneClass(ad.tone)} ${
         compact ? "p-3" : "p-4"
       }`}
-      aria-label="广告"
+      aria-label={adLabelText(ad)}
     >
       <div className="flex items-center justify-between gap-2">
         <p className="text-[11px] font-medium text-[var(--secondary-label)]">
-          赞助内容
+          {adLabelText(ad)}
         </p>
         <Link
           href="/membership"
@@ -85,11 +113,19 @@ export function AdSlot({
   );
 }
 
-/** 侧栏一次多条、顺序随机 */
-export function AdStack({ seed, count = 2 }: { seed: string; count?: number }) {
+/** 侧栏广告；默认更少，失败则不显示 */
+export function AdStack({ seed, count = 1 }: { seed: string; count?: number }) {
   const { showAds, ready } = useMembership();
   if (!ready || !showAds) return null;
-  const ads = pickAds(count, seed);
+
+  let ads: AdCreative[] = [];
+  try {
+    ads = pickAds(Math.max(0, count), seed);
+  } catch {
+    return null;
+  }
+  if (ads.length === 0) return null;
+
   return (
     <div className="space-y-3">
       {ads.map((ad) => (

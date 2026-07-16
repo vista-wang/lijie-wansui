@@ -48,7 +48,7 @@ export function LeftSidePanel() {
 
   return (
     <div className="space-y-4 animate-rise">
-      <AdStack seed="left-top" count={2} />
+      <AdStack seed="left-top" count={1} />
 
       <Panel title="大家都在看">
         <ol className="space-y-2.5">
@@ -102,7 +102,7 @@ export function LeftSidePanel() {
         </ul>
       </Panel>
 
-      <AdStack seed="left-bottom" count={2} />
+      <AdStack seed="left-bottom" count={1} />
     </div>
   );
 }
@@ -118,7 +118,7 @@ export function RightSidePanel() {
 
   return (
     <div className="space-y-4 animate-rise" style={{ animationDelay: "80ms" }}>
-      <AdStack seed="right-top" count={2} />
+      <AdStack seed="right-top" count={1} />
 
       <Panel title="新鲜出炉">
         <ul className="space-y-2.5">
@@ -172,7 +172,7 @@ export function RightSidePanel() {
         </Link>
       </Panel>
 
-      <AdStack seed="right-bottom" count={3} />
+      <AdStack seed="right-bottom" count={1} />
     </div>
   );
 }

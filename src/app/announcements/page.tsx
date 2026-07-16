@@ -34,7 +34,7 @@ export default function AnnouncementsPage() {
             <Link href="/membership" className="text-[var(--system-blue)]">
               超级会员
             </Link>
-            还可看到专属公告。
+            还可与开发者交流。
           </>
         )}
       </p>
@@ -51,7 +51,7 @@ export default function AnnouncementsPage() {
               </h2>
               {item.superOnly && (
                 <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-[11px] font-medium text-amber-800 dark:text-amber-200">
-                  超级专属
+                  与开发者交流
                 </span>
               )}
             </div>

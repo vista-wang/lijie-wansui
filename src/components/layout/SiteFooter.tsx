@@ -20,6 +20,9 @@ export function SiteFooter() {
           <Link href="/membership" className="text-[var(--secondary-label)]">
             会员
           </Link>
+          <Link href="/privacy" className="text-[var(--secondary-label)]">
+            隐私政策
+          </Link>
           <span className="animate-fade-pulse font-medium tracking-wide text-[var(--system-blue)]">
             使用 Cursor 制作
           </span>

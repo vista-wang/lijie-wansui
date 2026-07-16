@@ -65,13 +65,13 @@ function seedStore(): MockStoreData {
       {
         id: "announce-2",
         title: "会员权益上线",
-        body: "高级会员可去广告、反馈优先；超级会员还有推荐加权、专属徽章与专属公告。",
+        body: "高级会员可去广告、反馈优先、推荐加权与专属徽章；超级会员还有更强加权，并可与开发者交流。",
         createdAt: now,
       },
       {
         id: "announce-super-1",
-        title: "超级会员内测通道",
-        body: "感谢支持。本周超级会员可优先体验「口味相近的人」推荐微调，欢迎在反馈里告诉我们体感。",
+        title: "与开发者交流",
+        body: "感谢支持。超级会员可在此频道直接向开发者反馈产品想法，我们会优先阅读。",
         superOnly: true,
         createdAt: now,
       },
