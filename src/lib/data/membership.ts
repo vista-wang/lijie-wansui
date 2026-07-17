@@ -1,10 +1,9 @@
 /**
- * 理解万岁 · 会员 / 反馈 / 公告
+ * 理解万岁 · 会员 / 反馈 / 公告（读快照；写见 actions）
  * 使用 Cursor 制作
  */
 
-import { createId } from "@/lib/data/id";
-import { loadMockStore, saveMockStore } from "@/lib/data/mock-store";
+import { getStore } from "@/lib/data/store";
 import type {
   Announcement,
   FeedbackItem,
@@ -12,19 +11,9 @@ import type {
   MembershipTier,
 } from "@/lib/types/membership";
 
-function nowIso(): string {
-  return new Date().toISOString();
-}
-
-function addDays(iso: string, days: number): string {
-  const d = new Date(iso);
-  d.setDate(d.getDate() + days);
-  return d.toISOString();
-}
-
 export function getMembershipTier(userId: string | null): MembershipTier {
   if (!userId) return "free";
-  const record = loadMockStore().memberships.find((m) => m.userId === userId);
+  const record = getStore().memberships.find((m) => m.userId === userId);
   if (!record || record.tier === "free") return "free";
   if (record.expiresAt && new Date(record.expiresAt).getTime() < Date.now()) {
     return "free";
@@ -33,8 +22,7 @@ export function getMembershipTier(userId: string | null): MembershipTier {
 }
 
 export function canSeeAds(userId: string | null): boolean {
-  const tier = getMembershipTier(userId);
-  return tier === "free";
+  return getMembershipTier(userId) === "free";
 }
 
 export function membershipLabel(tier: MembershipTier): string {
@@ -43,88 +31,14 @@ export function membershipLabel(tier: MembershipTier): string {
   return "普通用户";
 }
 
-/** 伪充值：开通 / 续费 30 天（本地 mock + 可选同步 Supabase） */
-export function purchaseMembership(
-  userId: string,
-  tier: "plus" | "super",
-): MembershipTier {
-  const store = loadMockStore();
-  const existing = store.memberships.find((m) => m.userId === userId);
-  const base =
-    existing?.expiresAt && new Date(existing.expiresAt).getTime() > Date.now()
-      ? existing.expiresAt
-      : nowIso();
-  const expiresAt = addDays(base, 30);
-
-  if (existing) {
-    existing.tier = tier;
-    existing.expiresAt = expiresAt;
-  } else {
-    store.memberships.push({ userId, tier, expiresAt });
-  }
-  saveMockStore(store);
-
-  void syncMembershipToSupabase(userId, tier, expiresAt);
-
-  return tier;
-}
-
-async function syncMembershipToSupabase(
-  userId: string,
-  tier: "plus" | "super",
-  expiresAt: string,
-): Promise<void> {
-  try {
-    const { isSupabaseConfigured } = await import("@/lib/supabase/env");
-    if (!isSupabaseConfigured()) return;
-    const { createClient } = await import("@/lib/supabase/client");
-    const supabase = createClient();
-    await supabase.from("memberships").upsert({
-      user_id: userId,
-      tier,
-      expires_at: expiresAt,
-    });
-  } catch {
-    // 演示充值以本地为准；远端失败不阻断
-  }
-}
-
-function priorityForTier(tier: MembershipTier): FeedbackPriority {
-  if (tier === "super") return "super";
-  if (tier === "plus") return "plus";
-  return "normal";
-}
-
-export function submitFeedback(
-  userId: string,
-  body: string,
-  tierOverride?: MembershipTier,
-): FeedbackItem {
-  const trimmed = body.trim();
-  if (!trimmed) throw new Error("请先写下你的想法");
-  const tier = tierOverride ?? getMembershipTier(userId);
-  const item: FeedbackItem = {
-    id: createId("feedback"),
-    authorId: userId,
-    body: trimmed,
-    priority: priorityForTier(tier),
-    status: "open",
-    createdAt: nowIso(),
-  };
-  const store = loadMockStore();
-  store.feedbacks.unshift(item);
-  saveMockStore(store);
-  return item;
-}
-
 export function listMyFeedbacks(userId: string): FeedbackItem[] {
-  return loadMockStore()
+  return getStore()
     .feedbacks.filter((f) => f.authorId === userId)
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 }
 
 export function listFeedbacksForAdmin(kind: "plus" | "normal"): FeedbackItem[] {
-  const store = loadMockStore();
+  const store = getStore();
   const list =
     kind === "plus"
       ? store.feedbacks.filter(
@@ -144,39 +58,13 @@ export function listFeedbacksForAdmin(kind: "plus" | "normal"): FeedbackItem[] {
     );
 }
 
-export function markFeedbackDone(id: string): void {
-  const store = loadMockStore();
-  const item = store.feedbacks.find((f) => f.id === id);
-  if (!item) return;
-  item.status = "done";
-  saveMockStore(store);
-}
-
 export function listAnnouncements(
-  userId: string | null,
+  _userId: string | null,
   tierOverride?: MembershipTier,
 ): Announcement[] {
-  const tier = tierOverride ?? getMembershipTier(userId);
-  return loadMockStore()
+  const tier = tierOverride ?? "free";
+  return getStore()
     .announcements.filter((a) => !a.superOnly || tier === "super")
     .slice()
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-}
-
-export function createAnnouncement(input: {
-  title: string;
-  body: string;
-  superOnly?: boolean;
-}): Announcement {
-  const item: Announcement = {
-    id: createId("announce"),
-    title: input.title.trim(),
-    body: input.body.trim(),
-    superOnly: input.superOnly,
-    createdAt: nowIso(),
-  };
-  const store = loadMockStore();
-  store.announcements.unshift(item);
-  saveMockStore(store);
-  return item;
 }

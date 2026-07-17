@@ -6,11 +6,12 @@
  */
 
 import Link from "next/link";
-import { AdStack } from "@/components/ads/AdSlot";
+import { AiwAdSlot } from "@/components/ads/AdSlot";
 import { getSidebarPanels } from "@/lib/data/repositories";
 import { useStoreRevision } from "@/lib/data/use-store-revision";
 import { useClientReady } from "@/lib/hooks/useClientReady";
 import { formatDateTime } from "@/lib/i18n/labels";
+import { useData } from "@/components/data/DataProvider";
 
 function Panel({
   title,
@@ -40,15 +41,16 @@ function SideSkeleton() {
 
 export function LeftSidePanel() {
   const ready = useClientReady();
+  const { ready: dataReady } = useData();
   useStoreRevision();
 
-  if (!ready) return <SideSkeleton />;
+  if (!ready || !dataReady) return <SideSkeleton />;
 
   const { hot, categories } = getSidebarPanels();
 
   return (
     <div className="space-y-4 animate-rise">
-      <AdStack seed="left-top" count={1} />
+      <AiwAdSlot />
 
       <Panel title="大家都在看">
         <ol className="space-y-2.5">
@@ -99,27 +101,27 @@ export function LeftSidePanel() {
               </Link>
             </li>
           ))}
+          {categories.length === 0 && (
+            <p className="text-[13px] text-[var(--secondary-label)]">暂无分类</p>
+          )}
         </ul>
       </Panel>
-
-      <AdStack seed="left-bottom" count={1} />
     </div>
   );
 }
 
 export function RightSidePanel() {
   const ready = useClientReady();
+  const { ready: dataReady } = useData();
   useStoreRevision();
 
-  if (!ready) return <SideSkeleton />;
+  if (!ready || !dataReady) return <SideSkeleton />;
 
   const { recent, hot } = getSidebarPanels();
   const rising = hot.slice().sort((a, b) => b.count - a.count).slice(0, 5);
 
   return (
     <div className="space-y-4 animate-rise" style={{ animationDelay: "80ms" }}>
-      <AdStack seed="right-top" count={1} />
-
       <Panel title="新鲜出炉">
         <ul className="space-y-2.5">
           {recent.map((item) => (
@@ -137,6 +139,9 @@ export function RightSidePanel() {
               </Link>
             </li>
           ))}
+          {recent.length === 0 && (
+            <p className="text-[13px] text-[var(--secondary-label)]">还没有内容</p>
+          )}
         </ul>
       </Panel>
 
@@ -157,6 +162,9 @@ export function RightSidePanel() {
               </Link>
             </li>
           ))}
+          {rising.length === 0 && (
+            <p className="text-[13px] text-[var(--secondary-label)]">暂无数据</p>
+          )}
         </ul>
       </Panel>
 
@@ -171,8 +179,6 @@ export function RightSidePanel() {
           有想法？去反馈
         </Link>
       </Panel>
-
-      <AdStack seed="right-bottom" count={1} />
     </div>
   );
 }

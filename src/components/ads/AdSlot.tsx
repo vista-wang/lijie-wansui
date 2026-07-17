@@ -1,26 +1,24 @@
 "use client";
 
 /**
- * 理解万岁 · 广告位（会员免广告）
+ * 理解万岁 · 左上角广告位（会员免广告；Lemon Squeezy + AIW）
  * 使用 Cursor 制作
- *
- * 广告获取失败或无效时不渲染，避免空白/报错占位。
  */
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
+  AIW_AD,
   adLabelText,
-  pickOneAd,
-  pickAds,
   toneClass,
   type AdCreative,
 } from "@/lib/data/ads";
 import { useMembership } from "@/lib/hooks/useMembership";
 
 function AdCta({ href, children }: { href: string; children: React.ReactNode }) {
-  const external = href.startsWith("http://") || href.startsWith("https://");
   const className =
     "mt-3 inline-flex text-[13px] font-medium text-[var(--system-blue)]";
+  const external = href.startsWith("http://") || href.startsWith("https://");
   if (external) {
     return (
       <a
@@ -40,44 +38,7 @@ function AdCta({ href, children }: { href: string; children: React.ReactNode }) 
   );
 }
 
-function resolveCreative(
-  creative: AdCreative | undefined,
-  seed: string,
-): AdCreative | null {
-  try {
-    if (creative) {
-      if (
-        creative.id &&
-        creative.title?.trim() &&
-        creative.body?.trim() &&
-        creative.cta?.trim() &&
-        creative.href?.trim()
-      ) {
-        return creative;
-      }
-      return null;
-    }
-    return pickOneAd(seed);
-  } catch {
-    return null;
-  }
-}
-
-export function AdSlot({
-  seed = "default",
-  compact = false,
-  creative,
-}: {
-  seed?: string;
-  compact?: boolean;
-  creative?: AdCreative;
-}) {
-  const { showAds, ready } = useMembership();
-  if (!ready || !showAds) return null;
-
-  const ad = resolveCreative(creative, seed);
-  if (!ad) return null;
-
+function AdCard({ ad, compact }: { ad: AdCreative; compact: boolean }) {
   return (
     <aside
       className={`relative overflow-hidden rounded-2xl border border-[var(--separator)]/80 ${toneClass(ad.tone)} ${
@@ -113,24 +74,39 @@ export function AdSlot({
   );
 }
 
-/** 侧栏广告；默认更少，失败则不显示 */
-export function AdStack({ seed, count = 1 }: { seed: string; count?: number }) {
+/** 左上角：受会员免广告影响；优先 Lemon Squeezy，失败回退 AIW */
+export function AiwAdSlot({ compact = true }: { compact?: boolean }) {
   const { showAds, ready } = useMembership();
-  if (!ready || !showAds) return null;
+  const [ad, setAd] = useState<AdCreative | null>(AIW_AD);
 
-  let ads: AdCreative[] = [];
-  try {
-    ads = pickAds(Math.max(0, count), seed);
-  } catch {
-    return null;
-  }
-  if (ads.length === 0) return null;
+  useEffect(() => {
+    if (!ready || !showAds) return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const res = await fetch("/api/ads", { cache: "no-store" });
+        if (!res.ok) throw new Error("ads_failed");
+        const json = (await res.json()) as { ads?: AdCreative[] };
+        const list = (json.ads ?? []).filter(
+          (item) =>
+            item?.id &&
+            item.title?.trim() &&
+            item.body?.trim() &&
+            item.href?.trim(),
+        );
+        if (!cancelled) {
+          setAd(list[0] ?? AIW_AD);
+        }
+      } catch {
+        if (!cancelled) setAd(AIW_AD);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [ready, showAds]);
 
-  return (
-    <div className="space-y-3">
-      {ads.map((ad) => (
-        <AdSlot key={`${seed}-${ad.id}`} creative={ad} compact seed={seed} />
-      ))}
-    </div>
-  );
+  if (!ready || !showAds || !ad) return null;
+
+  return <AdCard ad={ad} compact={compact} />;
 }

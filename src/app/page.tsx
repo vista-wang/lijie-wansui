@@ -1,18 +1,17 @@
 "use client";
 
 /**
- * 理解万岁 · 主页（用户亲和推荐 + 随机广告穿插）
+ * 理解万岁 · 主页（用户亲和推荐）
  * 使用 Cursor 制作
  */
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Suspense, useMemo } from "react";
-import { AdSlot } from "@/components/ads/AdSlot";
+import { Suspense } from "react";
 import { useAuth } from "@/components/auth/AuthProvider";
+import { useData } from "@/components/data/DataProvider";
 import { InstanceList } from "@/components/instances/InstanceList";
 import { Pagination } from "@/components/ui/Pagination";
-import { weaveAdsIntoFeed } from "@/lib/data/ads";
 import { getHomeRecommendPage } from "@/lib/data/repositories";
 import { useStoreRevision } from "@/lib/data/use-store-revision";
 import { useClientReady } from "@/lib/hooks/useClientReady";
@@ -22,36 +21,24 @@ const PAGE_SIZE = 6;
 
 function HomeContent() {
   const ready = useClientReady();
+  const { ready: dataReady } = useData();
   useStoreRevision();
   const { user } = useAuth();
-  const { tier, label, showAds } = useMembership();
+  const { tier, label } = useMembership();
   const searchParams = useSearchParams();
   const rawPage = Number(searchParams.get("page") || "1");
   const page = Number.isFinite(rawPage) && rawPage > 0 ? Math.floor(rawPage) : 1;
 
-  const result = ready
-    ? getHomeRecommendPage({
-        userId: user?.id ?? null,
-        page,
-        pageSize: PAGE_SIZE,
-      })
-    : null;
+  const result =
+    ready && dataReady
+      ? getHomeRecommendPage({
+          userId: user?.id ?? null,
+          page,
+          pageSize: PAGE_SIZE,
+        })
+      : null;
 
-  const feed = useMemo(() => {
-    if (!result) return [];
-    if (!showAds) {
-      return result.rows.map((data) => ({
-        kind: "content" as const,
-        data,
-      }));
-    }
-    return weaveAdsIntoFeed(
-      result.rows,
-      `home-${page}-${user?.id ?? "guest"}-${new Date().toISOString().slice(0, 10)}`,
-    );
-  }, [result, showAds, page, user?.id]);
-
-  if (!ready || !result) {
+  if (!ready || !dataReady || !result) {
     return (
       <main className="w-full flex-1 pb-10 pt-1 sm:pt-2">
         <h1 className="text-[28px] font-semibold tracking-tight text-[var(--label)] sm:text-[34px]">
@@ -64,7 +51,7 @@ function HomeContent() {
     );
   }
 
-  const { totalPages, page: current } = result;
+  const { totalPages, page: current, rows } = result;
 
   return (
     <main className="w-full flex-1 pb-10 pt-1 sm:pt-2">
@@ -96,20 +83,12 @@ function HomeContent() {
       </p>
 
       <div className="mt-8 space-y-3 sm:mt-10">
-        {feed.map((entry, index) =>
-          entry.kind === "ad" ? (
-            <AdSlot
-              key={`ad-${index}-${entry.ad.id}`}
-              creative={entry.ad}
-              seed={`home-inline-${index}`}
-            />
-          ) : (
-            <InstanceList
-              key={entry.data.instance.id}
-              rows={[entry.data]}
-              animated={index < 4}
-            />
-          ),
+        {rows.length === 0 ? (
+          <p className="rounded-2xl bg-[var(--grouped-background)] px-4 py-8 text-center text-[15px] text-[var(--secondary-label)]">
+            还没有内容。登录后点「发一条」，成为第一位贡献者。
+          </p>
+        ) : (
+          <InstanceList rows={rows} animated />
         )}
       </div>
 

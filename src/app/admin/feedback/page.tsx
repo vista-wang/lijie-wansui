@@ -9,24 +9,24 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 import { useAuth } from "@/components/auth/AuthProvider";
+import { useData } from "@/components/data/DataProvider";
 import { Button } from "@/components/ui/Button";
-import { findMockUser } from "@/lib/auth/mock-users";
-import {
-  listFeedbacksForAdmin,
-  markFeedbackDone,
-} from "@/lib/data/membership";
+import { markFeedbackDoneAction } from "@/lib/data/actions";
+import { findProfileName } from "@/lib/data/store";
+import { listFeedbacksForAdmin } from "@/lib/data/membership";
 import { useStoreRevision } from "@/lib/data/use-store-revision";
 import { useClientReady } from "@/lib/hooks/useClientReady";
 import { formatDateTime } from "@/lib/i18n/labels";
 
 function AdminFeedbackContent() {
   const ready = useClientReady();
+  const { ready: dataReady, refresh } = useData();
   useStoreRevision();
   const { user } = useAuth();
   const searchParams = useSearchParams();
   const kind = searchParams.get("kind") === "plus" ? "plus" : "normal";
 
-  if (!ready) {
+  if (!ready || !dataReady) {
     return (
       <main className="w-full py-12 text-[var(--secondary-label)]">加载中…</main>
     );
@@ -37,7 +37,7 @@ function AdminFeedbackContent() {
       <main className="w-full py-12">
         <h1 className="text-[28px] font-semibold text-[var(--label)]">反馈</h1>
         <p className="mt-3 text-[15px] text-[var(--secondary-label)]">
-          需要管理员账号。请到「账号」切换为李明。
+          需要管理员账号（Clerk publicMetadata.role = admin）。
         </p>
       </main>
     );
@@ -81,7 +81,7 @@ function AdminFeedbackContent() {
 
       <ul className="mt-8 space-y-3">
         {list.map((item) => {
-          const author = findMockUser(item.authorId);
+          const name = findProfileName(item.authorId);
           return (
             <li
               key={item.id}
@@ -89,7 +89,7 @@ function AdminFeedbackContent() {
             >
               <div className="flex flex-wrap items-center gap-2">
                 <p className="text-[16px] font-medium text-[var(--label)]">
-                  {author?.displayName ?? item.authorId}
+                  {name ?? item.authorId}
                 </p>
                 <span className="rounded-full bg-black/[0.05] px-2 py-0.5 text-[11px] text-[var(--secondary-label)] dark:bg-white/[0.08]">
                   {item.priority === "super"
@@ -111,7 +111,10 @@ function AdminFeedbackContent() {
                   <Button
                     type="button"
                     variant="secondary"
-                    onClick={() => markFeedbackDone(item.id)}
+                    onClick={async () => {
+                      await markFeedbackDoneAction(item.id);
+                      await refresh();
+                    }}
                   >
                     标为已处理
                   </Button>

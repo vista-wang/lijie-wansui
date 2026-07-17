@@ -7,14 +7,17 @@
 
 import { useState } from "react";
 import { useAuth } from "@/components/auth/AuthProvider";
+import { useData } from "@/components/data/DataProvider";
 import { Button } from "@/components/ui/Button";
-import { createAnnouncement, listAnnouncements } from "@/lib/data/membership";
+import { createAnnouncementAction } from "@/lib/data/actions";
+import { listAnnouncements } from "@/lib/data/membership";
 import { useStoreRevision } from "@/lib/data/use-store-revision";
 import { useClientReady } from "@/lib/hooks/useClientReady";
 import { formatDateTime } from "@/lib/i18n/labels";
 
 export default function AdminAnnouncementsPage() {
   const ready = useClientReady();
+  const { ready: dataReady, refresh } = useData();
   useStoreRevision();
   const { user } = useAuth();
   const [title, setTitle] = useState("");
@@ -22,7 +25,7 @@ export default function AdminAnnouncementsPage() {
   const [superOnly, setSuperOnly] = useState(false);
   const [message, setMessage] = useState("");
 
-  if (!ready) {
+  if (!ready || !dataReady) {
     return (
       <main className="w-full py-12 text-[var(--secondary-label)]">加载中…</main>
     );
@@ -39,19 +42,24 @@ export default function AdminAnnouncementsPage() {
     );
   }
 
-  const list = listAnnouncements(user.id);
+  const list = listAnnouncements(user.id, "super");
 
-  function onSubmit(e: React.FormEvent) {
+  async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!title.trim() || !body.trim()) {
       setMessage("请填写标题和正文");
       return;
     }
-    createAnnouncement({ title, body, superOnly });
-    setTitle("");
-    setBody("");
-    setSuperOnly(false);
-    setMessage("公告已发布");
+    try {
+      await createAnnouncementAction({ title, body, superOnly });
+      await refresh();
+      setTitle("");
+      setBody("");
+      setSuperOnly(false);
+      setMessage("公告已发布");
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : "发布失败");
+    }
   }
 
   return (
@@ -82,9 +90,9 @@ export default function AdminAnnouncementsPage() {
             checked={superOnly}
             onChange={(e) => setSuperOnly(e.target.checked)}
           />
-          与开发者交流（仅超级会员可见）
+          仅超级会员可见（与开发者交流）
         </label>
-        <Button type="submit">发布</Button>
+        <Button type="submit">发布公告</Button>
       </form>
       {message && (
         <p className="mt-3 text-[15px] text-[var(--system-blue)]">{message}</p>
@@ -96,9 +104,9 @@ export default function AdminAnnouncementsPage() {
             key={item.id}
             className="rounded-2xl bg-[var(--grouped-background)] px-4 py-3"
           >
-            <p className="font-semibold text-[var(--label)]">
+            <p className="text-[17px] font-semibold text-[var(--label)]">
               {item.title}
-              {item.superOnly ? " · 与开发者交流" : ""}
+              {item.superOnly ? " · 超级专属" : ""}
             </p>
             <p className="mt-1 text-[14px] text-[var(--secondary-label)]">
               {item.body}
@@ -108,6 +116,9 @@ export default function AdminAnnouncementsPage() {
             </p>
           </li>
         ))}
+        {list.length === 0 && (
+          <li className="text-[15px] text-[var(--secondary-label)]">暂无公告</li>
+        )}
       </ul>
     </main>
   );

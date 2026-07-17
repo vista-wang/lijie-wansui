@@ -4,17 +4,19 @@ This file is the Claude/Cursor agent entrypoint for this repo. Prefer `AGENT.md`
 
 ## Before coding
 
-1. Read `AGENT.md`.  
-2. Read the latest plan under `docs/plans/` if the task is multi-step.  
+1. Read `AGENT.md`（含「Repo & continuity」会话恢复锚点）. 
+2. Read the latest plan under `docs/plans/` if the task is multi-step. 
 3. App root is the repository root.
 
 ## Hard constraints
 
-- Product: universal web evaluation system.  
-- Public reviews are **anonymous**; backend audit is **real-name**.  
-- **Clerk Auth enabled** — email/password + real name in metadata; content repos may still be mock.  
-- UI: Apple Human Interface Guidelines；界面文案仅中文。  
-- 敏感词：公开展示打码；管理员维护词库。  
+- Product: universal web evaluation system. 
+- Public reviews are **anonymous**; backend audit is **real-name**. 
+- **Clerk Auth** — email/password + real name in metadata；UI `zhCN`. 
+- **Supabase** — domain content（instances / ratings / …）；非 Supabase Auth. 
+- UI: Apple Human Interface Guidelines；界面文案仅中文。 
+- 敏感词：公开展示打码；管理员维护词库。 
+- AIW 广告仅左上角且始终展示。 
 - If blocked or overthinking: stop, report to user, wait.
 
 ## Project map

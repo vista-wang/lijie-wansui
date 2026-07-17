@@ -3,14 +3,19 @@
 import { useSyncExternalStore } from "react";
 import { subscribeStore } from "@/lib/data/store-events";
 
-const STORAGE_KEY = "universal-rating.mock-store.v8";
+let revision = 0;
 
 function getRevision(): string {
-  if (typeof window === "undefined") return "0";
-  return window.localStorage.getItem(STORAGE_KEY) ?? "0";
+  return String(revision);
 }
 
-/** 本地 mock 存储变更时触发重渲染 */
+const subscribe = (onChange: () => void) =>
+  subscribeStore(() => {
+    revision += 1;
+    onChange();
+  });
+
+/** Supabase 快照变更时触发重渲染 */
 export function useStoreRevision(): string {
-  return useSyncExternalStore(subscribeStore, getRevision, () => "0");
+  return useSyncExternalStore(subscribe, getRevision, () => "0");
 }

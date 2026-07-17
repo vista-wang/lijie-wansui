@@ -2,20 +2,24 @@
 
 import { useSearchParams } from "next/navigation";
 import { Suspense, useMemo, useState } from "react";
-import { AdSlot, AdStack } from "@/components/ads/AdSlot";
+import { useData } from "@/components/data/DataProvider";
 import { InstanceList } from "@/components/instances/InstanceList";
 import {
   getInstanceScoreSummary,
   listPublicInstances,
 } from "@/lib/data/repositories";
 import { useStoreRevision } from "@/lib/data/use-store-revision";
+import { useClientReady } from "@/lib/hooks/useClientReady";
 
 function SearchContent({ initialQuery }: { initialQuery: string }) {
   useStoreRevision();
+  const ready = useClientReady();
+  const { ready: dataReady } = useData();
   const [query, setQuery] = useState(initialQuery);
   const q = query.trim().toLowerCase();
 
   const rows = useMemo(() => {
+    if (!ready || !dataReady) return [];
     const all = listPublicInstances();
     const filtered = q
       ? all.filter(
@@ -29,7 +33,7 @@ function SearchContent({ initialQuery }: { initialQuery: string }) {
       instance,
       summary: getInstanceScoreSummary(instance.id),
     }));
-  }, [q]);
+  }, [q, ready, dataReady]);
 
   return (
     <main className="w-full flex-1 pb-10 pt-1 sm:pt-2">
@@ -53,16 +57,12 @@ function SearchContent({ initialQuery }: { initialQuery: string }) {
         />
       </label>
 
-      <div className="mt-6">
-        <AdSlot seed="search-top" />
-      </div>
-
       <div className="mt-8">
-        <InstanceList rows={rows} />
-      </div>
-
-      <div className="mt-8">
-        <AdStack seed="search-bottom" count={1} />
+        {!ready || !dataReady ? (
+          <p className="text-[15px] text-[var(--secondary-label)]">加载中…</p>
+        ) : (
+          <InstanceList rows={rows} />
+        )}
       </div>
     </main>
   );

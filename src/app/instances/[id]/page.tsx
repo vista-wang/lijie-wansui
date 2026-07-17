@@ -8,18 +8,20 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { AdSlot, AdStack } from "@/components/ads/AdSlot";
 import { useAuth } from "@/components/auth/AuthProvider";
+import { useData } from "@/components/data/DataProvider";
 import { Button } from "@/components/ui/Button";
 import {
-  createComment,
+  createCommentAction,
+  updateCommentAction,
+  upsertRatingAction,
+} from "@/lib/data/actions";
+import {
   getInstanceScoreSummary,
   getMyComment,
   getMyRating,
   getPublicInstance,
   listPublicComments,
-  updateComment,
-  upsertRating,
 } from "@/lib/data/repositories";
 import { useStoreRevision } from "@/lib/data/use-store-revision";
 import { useClientReady } from "@/lib/hooks/useClientReady";
@@ -31,16 +33,18 @@ import {
 
 export default function InstanceDetailPage() {
   const ready = useClientReady();
+  const { ready: dataReady, refresh } = useData();
   const params = useParams<{ id: string }>();
   const id = params.id;
   const { user } = useAuth();
   useStoreRevision();
 
-  const instance = ready ? getPublicInstance(id) : null;
-  const summary = ready ? getInstanceScoreSummary(id) : null;
-  const comments = ready ? listPublicComments(id) : [];
-  const myRating = ready && user ? getMyRating(id, user.id) : null;
-  const myComment = ready && user ? getMyComment(id, user.id) : null;
+  const loaded = ready && dataReady;
+  const instance = loaded ? getPublicInstance(id) : null;
+  const summary = loaded ? getInstanceScoreSummary(id) : null;
+  const comments = loaded ? listPublicComments(id) : [];
+  const myRating = loaded && user ? getMyRating(id, user.id) : null;
+  const myComment = loaded && user ? getMyComment(id, user.id) : null;
   const myScore = myRating?.score ?? null;
   const hasComment = Boolean(myComment);
 
@@ -48,7 +52,7 @@ export default function InstanceDetailPage() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
-  if (!ready) {
+  if (!loaded) {
     return (
       <main className="w-full py-12 text-[var(--secondary-label)]">加载中…</main>
     );
@@ -65,7 +69,7 @@ export default function InstanceDetailPage() {
     );
   }
 
-  function submitScore(score: number) {
+  async function submitScore(score: number) {
     setError("");
     setMessage("");
     if (!user) {
@@ -73,19 +77,19 @@ export default function InstanceDetailPage() {
       return;
     }
     try {
-      upsertRating({
+      await upsertRatingAction({
         instanceId: id,
-        authorId: user.id,
         score,
         anonymous: rateAnonymousRef.current,
       });
+      await refresh();
       setMessage(myScore == null ? "评分已提交" : "评分已更新");
     } catch (e) {
       setError(e instanceof Error ? e.message : "评分失败");
     }
   }
 
-  function submitComment(body: string, anonymous: boolean) {
+  async function submitComment(body: string, anonymous: boolean) {
     setError("");
     setMessage("");
     if (!user) {
@@ -98,22 +102,21 @@ export default function InstanceDetailPage() {
     }
     try {
       if (hasComment) {
-        updateComment({
+        await updateCommentAction({
           instanceId: id,
-          authorId: user.id,
           body,
           anonymous,
         });
         setMessage("评论已更新");
       } else {
-        createComment({
+        await createCommentAction({
           instanceId: id,
-          authorId: user.id,
           body,
           anonymous,
         });
         setMessage("评论已发布（每人只能留一条）");
       }
+      await refresh();
     } catch (e) {
       setError(e instanceof Error ? e.message : "评论失败");
     }
@@ -142,10 +145,6 @@ export default function InstanceDetailPage() {
       <p className="mt-4 text-[22px] font-semibold text-[var(--label)]">
         {summary ? formatScoreSummary(summary) : "还没人评"}
       </p>
-
-      <div className="mt-6 lg:hidden">
-        <AdSlot seed={`detail-top-${id}`} />
-      </div>
 
       <section className="mt-8 rounded-2xl bg-[var(--grouped-background)] p-5">
         <h2 className="text-[20px] font-semibold text-[var(--label)]">评分</h2>
@@ -196,10 +195,6 @@ export default function InstanceDetailPage() {
           </div>
         )}
       </section>
-
-      <div className="mt-4">
-        <AdSlot seed={`detail-mid-${id}-${user?.id ?? "g"}`} />
-      </div>
 
       <section className="mt-4 rounded-2xl bg-[var(--grouped-background)] p-5">
         <h2 className="text-[20px] font-semibold text-[var(--label)]">评论</h2>
@@ -254,10 +249,6 @@ export default function InstanceDetailPage() {
           )}
         </ul>
       </section>
-
-      <div className="mt-8 lg:hidden">
-        <AdStack seed={`detail-bottom-${id}`} count={1} />
-      </div>
     </main>
   );
 }

@@ -3,38 +3,48 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useAuth } from "@/components/auth/AuthProvider";
+import { useData } from "@/components/data/DataProvider";
 import { Button } from "@/components/ui/Button";
-import { createInstance } from "@/lib/data/repositories";
+import { createInstanceAction } from "@/lib/data/actions";
 import type { ScoringMode } from "@/lib/types/domain";
 
 export default function NewInstancePage() {
   const { user } = useAuth();
+  const { refresh } = useData();
   const router = useRouter();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("");
   const [scoringMode, setScoringMode] = useState<ScoringMode>("scale_10");
   const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
 
-  function onSubmit(e: React.FormEvent) {
+  async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
     if (!user) {
-      setError("请先登录伪账号");
+      setError("请先登录");
       return;
     }
     if (!title.trim() || !description.trim()) {
       setError("请填写标题与描述");
       return;
     }
-    const instance = createInstance({
-      title,
-      description,
-      category: category || undefined,
-      scoringMode,
-      actorId: user.id,
-    });
-    router.push(`/instances/${instance.id}`);
+    setBusy(true);
+    try {
+      const { id } = await createInstanceAction({
+        title,
+        description,
+        category: category || undefined,
+        scoringMode,
+      });
+      await refresh();
+      router.push(`/instances/${id}`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "发布失败");
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
@@ -95,8 +105,8 @@ export default function NewInstancePage() {
           <p className="text-[15px] text-red-600 dark:text-red-400">{error}</p>
         )}
 
-        <Button type="submit" className="w-full sm:w-auto">
-          发布
+        <Button type="submit" className="w-full sm:w-auto" disabled={busy}>
+          {busy ? "发布中…" : "发布"}
         </Button>
       </form>
     </main>

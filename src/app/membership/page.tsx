@@ -11,14 +11,14 @@ import { useAuth } from "@/components/auth/AuthProvider";
 import { Button } from "@/components/ui/Button";
 import { purchaseMembershipAction } from "@/lib/auth/actions";
 import { membershipLabel } from "@/lib/data/membership";
-import { loadMockStore, saveMockStore } from "@/lib/data/mock-store";
-import { emitStoreChange } from "@/lib/data/store-events";
+import { useData } from "@/components/data/DataProvider";
 import { useMembership } from "@/lib/hooks/useMembership";
 import { MEMBERSHIP_PLANS } from "@/lib/types/membership";
 
 export default function MembershipPage() {
   const { user } = useAuth();
   const { user: clerkUser } = useUser();
+  const { refresh } = useData();
   const { tier, label, ready } = useMembership();
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -34,22 +34,8 @@ export default function MembershipPage() {
     setBusy(true);
     try {
       const next = await purchaseMembershipAction(plan);
-      // 同步本地 mock，供推荐加权使用
-      const store = loadMockStore();
-      const existing = store.memberships.find((m) => m.userId === user.id);
-      if (existing) {
-        existing.tier = next.tier;
-        existing.expiresAt = next.expiresAt;
-      } else {
-        store.memberships.push({
-          userId: user.id,
-          tier: next.tier,
-          expiresAt: next.expiresAt,
-        });
-      }
-      saveMockStore(store);
-      emitStoreChange();
       await clerkUser?.reload();
+      await refresh();
       setMessage(
         `已开通${membershipLabel(next.tier)}（演示充值，有效期续 30 天）。`,
       );

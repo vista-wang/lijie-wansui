@@ -7,6 +7,7 @@
 
 import Link from "next/link";
 import { useAuth } from "@/components/auth/AuthProvider";
+import { useData } from "@/components/data/DataProvider";
 import { listAnnouncements } from "@/lib/data/membership";
 import { useStoreRevision } from "@/lib/data/use-store-revision";
 import { useClientReady } from "@/lib/hooks/useClientReady";
@@ -15,11 +16,13 @@ import { formatDateTime } from "@/lib/i18n/labels";
 
 export default function AnnouncementsPage() {
   const ready = useClientReady();
+  const { ready: dataReady } = useData();
   useStoreRevision();
   const { user } = useAuth();
   const { tier } = useMembership();
 
-  const list = ready ? listAnnouncements(user?.id ?? null, tier) : [];
+  const list =
+    ready && dataReady ? listAnnouncements(user?.id ?? null, tier) : [];
 
   return (
     <main className="w-full flex-1 pb-10 pt-1 sm:pt-2">

@@ -1,5 +1,5 @@
 /**
- * 理解万岁 · 从 Supabase 拉取当前用户档案
+ * 理解万岁 · 档案辅助（Clerk + Supabase profiles）
  * 使用 Cursor 制作
  */
 
@@ -14,39 +14,24 @@ type ProfileRow = {
   role: "user" | "admin";
 };
 
-export async function fetchCurrentProfile(): Promise<User | null> {
-  if (!isSupabaseConfigured()) return null;
+/** 按 Clerk user id 读 profile */
+export async function fetchProfileByClerkId(
+  clerkUserId: string,
+): Promise<User | null> {
+  if (!isSupabaseConfigured() || !clerkUserId) return null;
   const supabase = createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return null;
-
   const { data, error } = await supabase
     .from("profiles")
     .select("id, real_name, email, role")
-    .eq("id", user.id)
+    .eq("id", clerkUserId)
     .maybeSingle();
 
-  if (error || !data) {
-    // 触发器尚未写入时的兜底
-    const metaName =
-      typeof user.user_metadata?.real_name === "string"
-        ? user.user_metadata.real_name
-        : "";
-    return {
-      id: user.id,
-      displayName: metaName || user.email || "用户",
-      email: user.email ?? "",
-      role: "user",
-    };
-  }
-
+  if (error || !data) return null;
   const row = data as ProfileRow;
   return {
     id: row.id,
     displayName: row.real_name,
-    email: row.email || user.email || "",
+    email: row.email,
     role: row.role === "admin" ? "admin" : "user",
   };
 }
@@ -54,12 +39,11 @@ export async function fetchCurrentProfile(): Promise<User | null> {
 export async function checkRealNameAvailable(realName: string): Promise<boolean> {
   if (!isSupabaseConfigured()) return true;
   const supabase = createClient();
-  const { data, error } = await supabase.rpc("real_name_available", {
-    p_name: realName.trim(),
-  });
-  if (error) {
-    // RPC 失败时不阻塞，交给注册触发器再校验
-    return true;
-  }
-  return Boolean(data);
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("id")
+    .eq("real_name", realName.trim())
+    .maybeSingle();
+  if (error) return true;
+  return !data;
 }

@@ -1,17 +1,19 @@
-import { findMockUser } from "@/lib/auth/mock-users";
-import { createId } from "@/lib/data/id";
+/**
+ * 理解万岁 · 领域仓储（读：Supabase 快照；写：见 actions.ts）
+ * 使用 Cursor 制作
+ */
+
 import {
-  loadMockStore,
-  saveMockStore,
-  type MockStoreData,
-} from "@/lib/data/mock-store";
+  findProfileName,
+  getStore,
+} from "@/lib/data/store";
 import {
   buildUserAffinityFeed,
   paginateFeed,
   todaySeed,
   type RecommendItem,
 } from "@/lib/data/recommend";
-import { assertValidScore, summarizeScores } from "@/lib/data/score";
+import { summarizeScores } from "@/lib/data/score";
 import { maskSensitiveText } from "@/lib/data/sensitive";
 import type {
   AuditEvent,
@@ -21,78 +23,51 @@ import type {
   PublicComment,
   PublicRating,
   Rating,
-  ScoringMode,
 } from "@/lib/types/domain";
 import type { MembershipTier } from "@/lib/types/membership";
 
-function nowIso(): string {
-  return new Date().toISOString();
-}
-
-function withStore<T>(mutate: (store: MockStoreData) => T): T {
-  const store = loadMockStore();
-  const result = mutate(store);
-  saveMockStore(store);
-  return result;
-}
-
-function appendAudit(
-  store: MockStoreData,
-  event: Omit<AuditEvent, "id" | "createdAt"> & { createdAt?: string },
-): void {
-  store.auditEvents.push({
-    id: createId("audit"),
-    createdAt: event.createdAt ?? nowIso(),
-    actorId: event.actorId,
-    action: event.action,
-    entityType: event.entityType,
-    entityId: event.entityId,
-    payload: event.payload,
-  });
-}
-
 function toPublicRating(rating: Rating): PublicRating {
-  const user = findMockUser(rating.authorId);
   const anonymous = rating.anonymous !== false;
   return {
     id: rating.id,
     instanceId: rating.instanceId,
     score: rating.score,
     anonymous,
-    displayName: anonymous ? null : (user?.displayName ?? "用户"),
+    displayName: anonymous ? null : (findProfileName(rating.authorId) ?? "用户"),
     createdAt: rating.createdAt,
     updatedAt: rating.updatedAt,
   };
 }
 
 function toPublicComment(comment: Comment): PublicComment {
-  const user = findMockUser(comment.authorId);
   const anonymous = comment.anonymous !== false;
   return {
     id: comment.id,
     instanceId: comment.instanceId,
     body: comment.body,
     anonymous,
-    displayName: anonymous ? null : (user?.displayName ?? "用户"),
+    displayName: anonymous
+      ? null
+      : (findProfileName(comment.authorId) ?? "用户"),
     createdAt: comment.createdAt,
     updatedAt: comment.updatedAt,
   };
 }
 
 export function listInstances(): Instance[] {
-  return loadMockStore().instances.slice().sort((a, b) =>
-    b.createdAt.localeCompare(a.createdAt),
-  );
+  return getStore()
+    .instances.slice()
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 }
 
 export function getInstance(id: string): Instance | null {
-  return loadMockStore().instances.find((i) => i.id === id) ?? null;
+  return getStore().instances.find((i) => i.id === id) ?? null;
 }
 
 export function getPublicInstance(id: string): Instance | null {
   const instance = getInstance(id);
   if (!instance) return null;
-  const words = loadMockStore().sensitiveWords;
+  const words = getStore().sensitiveWords;
   return {
     ...instance,
     title: maskSensitiveText(instance.title, words),
@@ -101,7 +76,7 @@ export function getPublicInstance(id: string): Instance | null {
 }
 
 export function listPublicInstances(): Instance[] {
-  const words = loadMockStore().sensitiveWords;
+  const words = getStore().sensitiveWords;
   return listInstances().map((instance) => ({
     ...instance,
     title: maskSensitiveText(instance.title, words),
@@ -109,38 +84,8 @@ export function listPublicInstances(): Instance[] {
   }));
 }
 
-export function createInstance(input: {
-  title: string;
-  description: string;
-  scoringMode: ScoringMode;
-  category?: string;
-  actorId: string;
-}): Instance {
-  return withStore((store) => {
-    const createdAt = nowIso();
-    const instance: Instance = {
-      id: createId("instance"),
-      title: input.title.trim(),
-      description: input.description.trim(),
-      scoringMode: input.scoringMode,
-      category: input.category?.trim() || undefined,
-      createdBy: input.actorId,
-      createdAt,
-    };
-    store.instances.push(instance);
-    appendAudit(store, {
-      actorId: input.actorId,
-      action: "instance.create",
-      entityType: "instance",
-      entityId: instance.id,
-      createdAt,
-    });
-    return instance;
-  });
-}
-
 export function listPublicRatings(instanceId: string): PublicRating[] {
-  return loadMockStore()
+  return getStore()
     .ratings.filter((r) => r.instanceId === instanceId)
     .map(toPublicRating)
     .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
@@ -149,14 +94,13 @@ export function listPublicRatings(instanceId: string): PublicRating[] {
 export function getInstanceScoreSummary(
   instanceId: string,
 ): InstanceScoreSummary | null {
-  const store = loadMockStore();
+  const store = getStore();
   const instance = store.instances.find((i) => i.id === instanceId);
   if (!instance) return null;
   const ratings = store.ratings.filter((r) => r.instanceId === instanceId);
   return summarizeScores(instance.scoringMode, ratings);
 }
 
-/** 主页推荐：按用户亲和混排并分页（仅客户端调用，避免 hydration 偏差） */
 export type HotRankItem = {
   id: string;
   title: string;
@@ -175,13 +119,12 @@ export type RecentItem = {
   createdAt: string;
 };
 
-/** 桌面侧栏：热门 / 分类 / 最新 */
 export function getSidebarPanels(): {
   hot: HotRankItem[];
   categories: CategoryStat[];
   recent: RecentItem[];
 } {
-  const store = loadMockStore();
+  const store = getStore();
   const words = store.sensitiveWords;
 
   const hot = store.instances
@@ -233,7 +176,7 @@ export function getHomeRecommendPage(input: {
   page: number;
   pageSize?: number;
 }): { rows: RecommendItem[]; totalPages: number; page: number } {
-  const store = loadMockStore();
+  const store = getStore();
   const words = store.sensitiveWords;
   const publicInstances = store.instances.map((instance) => ({
     ...instance,
@@ -269,70 +212,14 @@ export function getMyRating(
   authorId: string,
 ): Rating | null {
   return (
-    loadMockStore().ratings.find(
+    getStore().ratings.find(
       (r) => r.instanceId === instanceId && r.authorId === authorId,
     ) ?? null
   );
 }
 
-/** Create or update the single rating for this account on the instance. */
-export function upsertRating(input: {
-  instanceId: string;
-  authorId: string;
-  score: number;
-  anonymous?: boolean;
-}): Rating {
-  return withStore((store) => {
-    const instance = store.instances.find((i) => i.id === input.instanceId);
-    if (!instance) throw new Error("未找到该实例");
-    assertValidScore(instance.scoringMode, input.score);
-    const anonymous = input.anonymous !== false;
-
-    const existing = store.ratings.find(
-      (r) =>
-        r.instanceId === input.instanceId && r.authorId === input.authorId,
-    );
-    const updatedAt = nowIso();
-
-    if (existing) {
-      existing.score = input.score;
-      existing.anonymous = anonymous;
-      existing.updatedAt = updatedAt;
-      appendAudit(store, {
-        actorId: input.authorId,
-        action: "rating.update",
-        entityType: "rating",
-        entityId: existing.id,
-        createdAt: updatedAt,
-        payload: { score: input.score, anonymous },
-      });
-      return { ...existing };
-    }
-
-    const rating: Rating = {
-      id: createId("rating"),
-      instanceId: input.instanceId,
-      authorId: input.authorId,
-      score: input.score,
-      anonymous,
-      createdAt: updatedAt,
-      updatedAt,
-    };
-    store.ratings.push(rating);
-    appendAudit(store, {
-      actorId: input.authorId,
-      action: "rating.create",
-      entityType: "rating",
-      entityId: rating.id,
-      createdAt: updatedAt,
-      payload: { score: input.score, anonymous },
-    });
-    return rating;
-  });
-}
-
 export function listPublicComments(instanceId: string): PublicComment[] {
-  const store = loadMockStore();
+  const store = getStore();
   const words = store.sensitiveWords;
   return store.comments
     .filter((c) => c.instanceId === instanceId)
@@ -346,88 +233,14 @@ export function getMyComment(
   authorId: string,
 ): Comment | null {
   return (
-    loadMockStore().comments.find(
+    getStore().comments.find(
       (c) => c.instanceId === instanceId && c.authorId === authorId,
     ) ?? null
   );
 }
 
-/** First comment only. Throws if a second comment is attempted. */
-export function createComment(input: {
-  instanceId: string;
-  authorId: string;
-  body: string;
-  anonymous?: boolean;
-}): Comment {
-  return withStore((store) => {
-    const instance = store.instances.find((i) => i.id === input.instanceId);
-    if (!instance) throw new Error("未找到该实例");
-
-    const existing = store.comments.find(
-      (c) =>
-        c.instanceId === input.instanceId && c.authorId === input.authorId,
-    );
-    if (existing) {
-      throw new Error("同一账号不能二次评论");
-    }
-
-    const createdAt = nowIso();
-    const comment: Comment = {
-      id: createId("comment"),
-      instanceId: input.instanceId,
-      authorId: input.authorId,
-      body: input.body.trim(),
-      anonymous: input.anonymous !== false,
-      createdAt,
-      updatedAt: createdAt,
-    };
-    store.comments.push(comment);
-    appendAudit(store, {
-      actorId: input.authorId,
-      action: "comment.create",
-      entityType: "comment",
-      entityId: comment.id,
-      createdAt,
-      payload: { anonymous: comment.anonymous },
-    });
-    return comment;
-  });
-}
-
-/** Edit the single existing comment. */
-export function updateComment(input: {
-  instanceId: string;
-  authorId: string;
-  body: string;
-  anonymous?: boolean;
-}): Comment {
-  return withStore((store) => {
-    const existing = store.comments.find(
-      (c) =>
-        c.instanceId === input.instanceId && c.authorId === input.authorId,
-    );
-    if (!existing) throw new Error("未找到评论");
-
-    const updatedAt = nowIso();
-    existing.body = input.body.trim();
-    if (input.anonymous !== undefined) {
-      existing.anonymous = input.anonymous;
-    }
-    existing.updatedAt = updatedAt;
-    appendAudit(store, {
-      actorId: input.authorId,
-      action: "comment.update",
-      entityType: "comment",
-      entityId: existing.id,
-      createdAt: updatedAt,
-      payload: { anonymous: existing.anonymous },
-    });
-    return { ...existing };
-  });
-}
-
 export function listAuditEvents(): AuditEvent[] {
-  return loadMockStore()
+  return getStore()
     .auditEvents.slice()
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 }
@@ -441,9 +254,8 @@ export type MyRecordItem = {
   at: string;
 };
 
-/** 当前账号的评分与评论（本人可见，含实名语境下的操作记录） */
 export function listMyRecords(authorId: string): MyRecordItem[] {
-  const store = loadMockStore();
+  const store = getStore();
   const words = store.sensitiveWords;
   const titleOf = (instanceId: string) => {
     const inst = store.instances.find((i) => i.id === instanceId);

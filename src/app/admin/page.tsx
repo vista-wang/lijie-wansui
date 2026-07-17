@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useAuth } from "@/components/auth/AuthProvider";
-import { findMockUser } from "@/lib/auth/mock-users";
+import { useData } from "@/components/data/DataProvider";
+import { findProfileName } from "@/lib/data/store";
 import { listAuditEvents, listInstances } from "@/lib/data/repositories";
 import { useStoreRevision } from "@/lib/data/use-store-revision";
 import { auditActionLabel, formatDateTime } from "@/lib/i18n/labels";
@@ -10,11 +11,12 @@ import type { AuditEvent } from "@/lib/types/domain";
 
 export default function AdminPage() {
   const { user, ready } = useAuth();
+  const { ready: dataReady } = useData();
   useStoreRevision();
-  const events = user?.role === "admin" ? listAuditEvents() : [];
-  const instances = user?.role === "admin" ? listInstances() : [];
+  const events = user?.role === "admin" && dataReady ? listAuditEvents() : [];
+  const instances = user?.role === "admin" && dataReady ? listInstances() : [];
 
-  if (!ready) {
+  if (!ready || !dataReady) {
     return (
       <main className="w-full py-12 text-[var(--secondary-label)]">
         加载中…
@@ -27,7 +29,8 @@ export default function AdminPage() {
       <main className="w-full py-12">
         <h1 className="text-[28px] font-semibold text-[var(--label)]">管理</h1>
         <p className="mt-3 text-[17px] text-[var(--secondary-label)]">
-          需要管理员账号。请到「账号」切换为李明后进入。
+          需要管理员账号。请在 Clerk Dashboard 将该用户 publicMetadata.role 设为
+          admin。
         </p>
       </main>
     );
@@ -66,7 +69,7 @@ export default function AdminPage() {
         </h2>
         <ul className="mt-4 space-y-2">
           {events.map((event) => {
-            const actor = findMockUser(event.actorId);
+            const actorName = findProfileName(event.actorId);
             return (
               <li
                 key={event.id}
@@ -74,7 +77,7 @@ export default function AdminPage() {
               >
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
                   <p className="text-[16px] font-medium text-[var(--label)]">
-                    {actor?.displayName ?? event.actorId}
+                    {actorName ?? event.actorId}
                     <span className="mx-2 font-normal text-[var(--secondary-label)]">
                       ·
                     </span>

@@ -1,16 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import { AdSlot, AdStack } from "@/components/ads/AdSlot";
 import { useAuth } from "@/components/auth/AuthProvider";
+import { useData } from "@/components/data/DataProvider";
 import { listMyRecords } from "@/lib/data/repositories";
 import { useStoreRevision } from "@/lib/data/use-store-revision";
 import { formatDateTime } from "@/lib/i18n/labels";
 
 export default function RecordsPage() {
   const { user } = useAuth();
+  const { ready: dataReady } = useData();
   useStoreRevision();
-  const records = user ? listMyRecords(user.id) : [];
+  const records = dataReady && user ? listMyRecords(user.id) : [];
 
   return (
     <main className="w-full flex-1 pb-10 pt-1 sm:pt-2">
@@ -20,10 +21,6 @@ export default function RecordsPage() {
       <p className="mt-2 text-[15px] text-[var(--secondary-label)] sm:text-[17px]">
         你点评过、留言过的内容都在这里。
       </p>
-
-      <div className="mt-6">
-        <AdSlot seed="records-top" />
-      </div>
 
       {!user && (
         <p className="mt-10 rounded-2xl bg-[var(--grouped-background)] px-5 py-8 text-[15px] text-[var(--secondary-label)]">
@@ -56,17 +53,13 @@ export default function RecordsPage() {
               </Link>
             </li>
           ))}
-          {records.length === 0 && (
+          {dataReady && records.length === 0 && (
             <li className="rounded-2xl bg-[var(--grouped-background)] px-5 py-8 text-[15px] text-[var(--secondary-label)]">
               暂无记录。
             </li>
           )}
         </ul>
       )}
-
-      <div className="mt-8">
-        <AdStack seed="records-bottom" count={1} />
-      </div>
     </main>
   );
 }

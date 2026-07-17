@@ -12,8 +12,9 @@ import { Button } from "@/components/ui/Button";
 import {
   listMyFeedbacks,
   membershipLabel,
-  submitFeedback,
 } from "@/lib/data/membership";
+import { submitFeedbackAction } from "@/lib/data/actions";
+import { useData } from "@/components/data/DataProvider";
 import { useStoreRevision } from "@/lib/data/use-store-revision";
 import { useClientReady } from "@/lib/hooks/useClientReady";
 import { useMembership } from "@/lib/hooks/useMembership";
@@ -21,6 +22,7 @@ import { formatDateTime } from "@/lib/i18n/labels";
 
 export default function FeedbackPage() {
   const ready = useClientReady();
+  const { ready: dataReady, refresh } = useData();
   useStoreRevision();
   const { user } = useAuth();
   const { tier, label } = useMembership();
@@ -28,9 +30,9 @@ export default function FeedbackPage() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
-  const mine = ready && user ? listMyFeedbacks(user.id) : [];
+  const mine = ready && dataReady && user ? listMyFeedbacks(user.id) : [];
 
-  function onSubmit(e: React.FormEvent) {
+  async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setMessage("");
     setError("");
@@ -39,7 +41,8 @@ export default function FeedbackPage() {
       return;
     }
     try {
-      submitFeedback(user.id, body, tier);
+      await submitFeedbackAction(body);
+      await refresh();
       setBody("");
       setMessage(
         tier === "free"

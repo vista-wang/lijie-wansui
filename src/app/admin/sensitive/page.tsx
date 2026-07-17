@@ -3,18 +3,21 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useAuth } from "@/components/auth/AuthProvider";
+import { useData } from "@/components/data/DataProvider";
 import { Button } from "@/components/ui/Button";
 import {
-  addSensitiveWord,
-  listSensitiveWords,
-  removeSensitiveWord,
-} from "@/lib/data/sensitive";
+  addSensitiveWordAction,
+  removeSensitiveWordAction,
+} from "@/lib/data/actions";
+import { listSensitiveWords } from "@/lib/data/sensitive";
 import { useStoreRevision } from "@/lib/data/use-store-revision";
 
 export default function SensitiveWordsPage() {
   const { user, ready } = useAuth();
+  const { ready: dataReady, refresh } = useData();
   useStoreRevision();
-  const words = user?.role === "admin" ? listSensitiveWords() : [];
+  const words =
+    user?.role === "admin" && dataReady ? listSensitiveWords() : [];
   const [draft, setDraft] = useState("");
   const [error, setError] = useState("");
 
@@ -33,18 +36,19 @@ export default function SensitiveWordsPage() {
           敏感词管理
         </h1>
         <p className="mt-3 text-[17px] text-[var(--secondary-label)]">
-          需要管理员账号。
+          需要管理员账号（Clerk publicMetadata.role = admin）。
         </p>
       </main>
     );
   }
 
-  function onAdd(e: React.FormEvent) {
+  async function onAdd(e: React.FormEvent) {
     e.preventDefault();
     setError("");
     try {
-      addSensitiveWord(draft);
+      await addSensitiveWordAction(draft);
       setDraft("");
+      await refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "添加失败");
     }
@@ -62,7 +66,7 @@ export default function SensitiveWordsPage() {
         敏感词打码
       </h1>
       <p className="mt-2 text-[17px] text-[var(--secondary-label)]">
-        公开标题、描述与评论中命中词将被替换为等长「*」。原文仍保存在本地存储中。
+        公开标题、描述与评论中命中词将被替换为「*」。原文保存在 Supabase。
       </p>
 
       <form onSubmit={onAdd} className="mt-8 flex flex-col gap-3 sm:flex-row">
@@ -90,7 +94,10 @@ export default function SensitiveWordsPage() {
             <Button
               type="button"
               variant="ghost"
-              onClick={() => removeSensitiveWord(word)}
+              onClick={async () => {
+                await removeSensitiveWordAction(word);
+                await refresh();
+              }}
             >
               移除
             </Button>
@@ -98,7 +105,7 @@ export default function SensitiveWordsPage() {
         ))}
         {words.length === 0 && (
           <li className="text-[15px] text-[var(--secondary-label)]">
-            词库为空。
+            暂无敏感词。
           </li>
         )}
       </ul>
