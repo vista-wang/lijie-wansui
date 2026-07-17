@@ -1,13 +1,16 @@
 "use client";
 
-import { useAuth } from "@/components/auth/AuthProvider";
+/**
+ * 理解万岁 · 会员状态（Clerk publicMetadata）
+ * 使用 Cursor 制作
+ */
+
+import { useUser } from "@clerk/nextjs";
 import {
-  canSeeAds,
-  getMembershipTier,
-  membershipLabel,
-} from "@/lib/data/membership";
-import { useStoreRevision } from "@/lib/data/use-store-revision";
-import { useClientReady } from "@/lib/hooks/useClientReady";
+  readPublicMeta,
+  resolveMembershipTier,
+} from "@/lib/auth/clerk-meta";
+import { membershipLabel } from "@/lib/data/membership";
 import type { MembershipTier } from "@/lib/types/membership";
 
 export function useMembership(): {
@@ -16,14 +19,15 @@ export function useMembership(): {
   showAds: boolean;
   ready: boolean;
 } {
-  const ready = useClientReady();
-  useStoreRevision();
-  const { user } = useAuth();
-  const tier = ready ? getMembershipTier(user?.id ?? null) : "free";
+  const { isLoaded, user } = useUser();
+  const meta = readPublicMeta(
+    user?.publicMetadata as Record<string, unknown> | undefined,
+  );
+  const tier = isLoaded && user ? resolveMembershipTier(meta) : "free";
   return {
     tier,
     label: membershipLabel(tier),
-    showAds: ready ? canSeeAds(user?.id ?? null) : false,
-    ready,
+    showAds: isLoaded ? tier === "free" : false,
+    ready: isLoaded,
   };
 }

@@ -3,6 +3,13 @@
  * 使用 Cursor 制作
  */
 
+import {
+  ClerkProvider,
+  Show,
+  SignInButton,
+  SignUpButton,
+  UserButton,
+} from "@clerk/nextjs";
 import type { Metadata } from "next";
 import { AuthProvider } from "@/components/auth/AuthProvider";
 import { AppHeader } from "@/components/layout/AppHeader";
@@ -27,13 +34,41 @@ export default function RootLayout({
   return (
     <html lang="zh-CN" className="h-full antialiased">
       <body className="flex min-h-full flex-col">
-        <AuthProvider>
-          <AppHeader />
-          <div className="flex flex-1 flex-col pb-[calc(3.5rem+env(safe-area-inset-bottom))] md:pb-0">
-            <AppShell>{children}</AppShell>
-            <SiteFooter />
-          </div>
-        </AuthProvider>
+        <ClerkProvider>
+          <AuthProvider>
+            <AppHeader
+              authSlot={
+                <div className="hidden items-center gap-2 md:flex">
+                  <Show when="signed-out">
+                    <SignInButton mode="modal">
+                      <button
+                        type="button"
+                        className="rounded-lg px-2.5 py-2 text-[14px] text-[var(--secondary-label)] hover:text-[var(--label)] sm:px-3 sm:text-[15px]"
+                      >
+                        登录
+                      </button>
+                    </SignInButton>
+                    <SignUpButton mode="modal">
+                      <button
+                        type="button"
+                        className="rounded-lg bg-[var(--system-blue)] px-3 py-2 text-[14px] font-medium text-white sm:text-[15px]"
+                      >
+                        注册
+                      </button>
+                    </SignUpButton>
+                  </Show>
+                  <Show when="signed-in">
+                    <UserButton />
+                  </Show>
+                </div>
+              }
+            />
+            <div className="flex flex-1 flex-col pb-[calc(3.5rem+env(safe-area-inset-bottom))] md:pb-0">
+              <AppShell>{children}</AppShell>
+              <SiteFooter />
+            </div>
+          </AuthProvider>
+        </ClerkProvider>
       </body>
     </html>
   );

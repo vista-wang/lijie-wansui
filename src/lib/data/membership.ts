@@ -95,10 +95,14 @@ function priorityForTier(tier: MembershipTier): FeedbackPriority {
   return "normal";
 }
 
-export function submitFeedback(userId: string, body: string): FeedbackItem {
+export function submitFeedback(
+  userId: string,
+  body: string,
+  tierOverride?: MembershipTier,
+): FeedbackItem {
   const trimmed = body.trim();
   if (!trimmed) throw new Error("请先写下你的想法");
-  const tier = getMembershipTier(userId);
+  const tier = tierOverride ?? getMembershipTier(userId);
   const item: FeedbackItem = {
     id: createId("feedback"),
     authorId: userId,
@@ -148,8 +152,11 @@ export function markFeedbackDone(id: string): void {
   saveMockStore(store);
 }
 
-export function listAnnouncements(userId: string | null): Announcement[] {
-  const tier = getMembershipTier(userId);
+export function listAnnouncements(
+  userId: string | null,
+  tierOverride?: MembershipTier,
+): Announcement[] {
+  const tier = tierOverride ?? getMembershipTier(userId);
   return loadMockStore()
     .announcements.filter((a) => !a.superOnly || tier === "super")
     .slice()

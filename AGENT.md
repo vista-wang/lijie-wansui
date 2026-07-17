@@ -13,9 +13,9 @@ Build **理解万岁**, a web-based universal evaluation system: users can disco
    - Backend audit logs must record who performed create / rate / edit / delete.
 
 2. **Auth & storage**  
-   - Target: Supabase Auth + Postgres.  
-   - **Supabase is enabled** (`NEXT_PUBLIC_SUPABASE_*`). Auth uses real email/password + unique real name.  
-   - Domain content (instances / ratings / comments) still has a local mock repository for bootstrap; schema & RLS already live in `supabase/migrations/`. Swap repositories when ready.
+   - **Auth: Clerk**（邮箱登录 / 注册；真名与会员档位写在 `publicMetadata`）。  
+   - Domain content (instances / ratings / comments) still uses local mock repository for bootstrap.  
+   - Legacy Supabase schema may remain under `supabase/migrations/`；运行时认证不再走 Supabase Auth.
 
 3. **UI**  
    - Follow Apple Human Interface Guidelines: clarity, deference, depth; large readable type; generous spacing; familiar navigation patterns; restrained color; accessible contrast and focus states.
@@ -31,7 +31,8 @@ Build **理解万岁**, a web-based universal evaluation system: users can disco
 - [x] Domain model & mock data layer  
 - [x] Core UI (list / detail / create / rate / comment) — 全中文  
 - [x] Admin / audit + 敏感词打码  
-- [x] Supabase Auth + schema / RLS（内容仓储仍可走 mock）
+- [x] Supabase schema / RLS（历史迁移；认证已切 Clerk）
+- [x] Clerk Auth + 会员元数据
 
 ## Tech Stack (decided for bootstrap)
 
@@ -39,10 +40,10 @@ Build **理解万岁**, a web-based universal evaluation system: users can disco
 |-------|--------|
 | Framework | Next.js (App Router) + TypeScript |
 | Styling | Tailwind CSS v4; Apple-HIG-inspired tokens |
-| Auth (now) | Supabase Auth（邮箱 + 真实姓名） |
+| Auth (now) | Clerk（邮箱登录；真名 / 会员在 publicMetadata） |
 | Auth (seed) | Local mock users 仅作种子评分数据 |
 | Data (now) | Local mock store behind repository interfaces |
-| Data (schema) | Supabase Postgres + RLS（见 `supabase/migrations/`） |
+| Data (schema) | 可选：历史 Supabase Postgres SQL |
 | Package name | `universal-rating` (npm-safe; workspace folder may differ) |
 | App root | repository root |
 
@@ -81,7 +82,7 @@ Interfaces live under `src/lib/`; UI must not import Supabase clients directly u
 ## Agent Operating Rules
 
 - Prefer small, reviewable changes; do not expand scope without asking.  
-- Supabase Auth is enabled; keep domain repositories behind interfaces until data cutover.  
+- Auth is Clerk; keep domain repositories behind interfaces until data cutover.  
 - Ask the user when product ambiguity blocks progress; do not invent major product policy.  
 - If stuck > ~2 minutes of fruitless reasoning on one issue: report and wait.  
 - Never commit secrets. Never force-push main. Commit only when asked.

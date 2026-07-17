@@ -1,44 +1,62 @@
 "use client";
 
 /**
- * 理解万岁 · 会员充值
+ * 理解万岁 · 会员充值（Clerk 元数据）
  * 使用 Cursor 制作
  */
 
+import { useUser } from "@clerk/nextjs";
 import { useState } from "react";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { Button } from "@/components/ui/Button";
-import {
-  getMembershipTier,
-  membershipLabel,
-  purchaseMembership,
-} from "@/lib/data/membership";
-import { useStoreRevision } from "@/lib/data/use-store-revision";
-import { useClientReady } from "@/lib/hooks/useClientReady";
+import { purchaseMembershipAction } from "@/lib/auth/actions";
+import { membershipLabel } from "@/lib/data/membership";
+import { loadMockStore, saveMockStore } from "@/lib/data/mock-store";
+import { emitStoreChange } from "@/lib/data/store-events";
+import { useMembership } from "@/lib/hooks/useMembership";
 import { MEMBERSHIP_PLANS } from "@/lib/types/membership";
 
 export default function MembershipPage() {
-  const ready = useClientReady();
-  useStoreRevision();
   const { user } = useAuth();
+  const { user: clerkUser } = useUser();
+  const { tier, label, ready } = useMembership();
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
-  const tier = ready && user ? getMembershipTier(user.id) : "free";
+  const [busy, setBusy] = useState(false);
 
-  function buy(plan: "plus" | "super") {
+  async function buy(plan: "plus" | "super") {
     setMessage("");
     setError("");
     if (!user) {
       setError("请先登录账号，再到这里开通。");
       return;
     }
+    setBusy(true);
     try {
-      const next = purchaseMembership(user.id, plan);
+      const next = await purchaseMembershipAction(plan);
+      // 同步本地 mock，供推荐加权使用
+      const store = loadMockStore();
+      const existing = store.memberships.find((m) => m.userId === user.id);
+      if (existing) {
+        existing.tier = next.tier;
+        existing.expiresAt = next.expiresAt;
+      } else {
+        store.memberships.push({
+          userId: user.id,
+          tier: next.tier,
+          expiresAt: next.expiresAt,
+        });
+      }
+      saveMockStore(store);
+      emitStoreChange();
+      await clerkUser?.reload();
       setMessage(
-        `已开通${membershipLabel(next)}（演示充值，有效期续 30 天）。`,
+        `已开通${membershipLabel(next.tier)}（演示充值，有效期续 30 天）。`,
       );
     } catch (e) {
       setError(e instanceof Error ? e.message : "开通失败");
+    } finally {
+      setBusy(false);
     }
   }
 
@@ -53,7 +71,7 @@ export default function MembershipPage() {
       <p className="mt-2 max-w-xl text-[15px] leading-relaxed text-[var(--secondary-label)] sm:text-[17px]">
         想更清爽、反馈更快被看见？选适合你的方案。当前：
         <span className="font-medium text-[var(--label)]">
-          {ready ? membershipLabel(tier) : "…"}
+          {ready ? label : "…"}
         </span>
       </p>
 
@@ -88,7 +106,8 @@ export default function MembershipPage() {
               type="button"
               className="mt-6 w-full"
               variant={plan.tier === "super" ? "primary" : "secondary"}
-              onClick={() => buy(plan.tier)}
+              disabled={busy}
+              onClick={() => void buy(plan.tier)}
             >
               {tier === plan.tier ? "续费一个月" : "立即开通"}
             </Button>
@@ -109,7 +128,7 @@ export default function MembershipPage() {
       )}
 
       <p className="mt-8 text-[13px] text-[var(--secondary-label)]">
-        说明：当前为本地演示充值，不会产生真实扣款。正式上线后将接入支付。
+        说明：当前为演示充值，写入 Clerk 账号元数据，不会产生真实扣款。
       </p>
     </main>
   );

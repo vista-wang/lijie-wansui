@@ -35,7 +35,7 @@ function navClass(active: boolean) {
   }`;
 }
 
-export function AppHeader() {
+export function AppHeader({ authSlot }: { authSlot?: React.ReactNode }) {
   const pathname = usePathname();
   const membershipActive = pathname.startsWith("/membership");
   const accountActive = pathname.startsWith("/account");
@@ -63,19 +63,21 @@ export function AppHeader() {
             ))}
           </nav>
 
-          <div className="ml-auto hidden items-center gap-1 md:flex">
+          <div className="ml-auto flex items-center gap-1">
             <Link
               href="/membership"
-              className={`${navClass(membershipActive)} text-[var(--system-blue)]`}
+              className={`hidden md:inline-flex ${navClass(membershipActive)} text-[var(--system-blue)]`}
             >
               高级会员
             </Link>
-            <Link href="/account" className={navClass(accountActive)}>
+            <Link
+              href="/account"
+              className={`hidden md:inline-flex ${navClass(accountActive)}`}
+            >
               账号
             </Link>
+            {authSlot}
           </div>
-
-          <div className="ml-auto md:hidden" aria-hidden />
         </div>
       </header>
 

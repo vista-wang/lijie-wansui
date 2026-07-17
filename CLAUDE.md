@@ -12,7 +12,7 @@ This file is the Claude/Cursor agent entrypoint for this repo. Prefer `AGENT.md`
 
 - Product: universal web evaluation system.  
 - Public reviews are **anonymous**; backend audit is **real-name**.  
-- **Supabase Auth enabled** — email/password + unique real name; content repos may still be mock.  
+- **Clerk Auth enabled** — email/password + real name in metadata; content repos may still be mock.  
 - UI: Apple Human Interface Guidelines；界面文案仅中文。  
 - 敏感词：公开展示打码；管理员维护词库。  
 - If blocked or overthinking: stop, report to user, wait.
@@ -27,8 +27,8 @@ This file is the Claude/Cursor agent entrypoint for this repo. Prefer `AGENT.md`
   supabase/migrations/     # Postgres schema + RLS
   src/app/                 # Next.js App Router pages
   src/components/          # UI components
-  src/lib/auth/            # auth helpers + messages
-  src/lib/supabase/        # Supabase clients
+  src/lib/auth/            # Clerk helpers + messages
+  src/lib/supabase/        # legacy helpers (unused for auth)
   src/lib/data/            # repository interfaces + mock stores
   src/lib/types/           # shared domain types
 ```

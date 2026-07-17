@@ -19,7 +19,7 @@ export default function AnnouncementsPage() {
   const { user } = useAuth();
   const { tier } = useMembership();
 
-  const list = ready ? listAnnouncements(user?.id ?? null) : [];
+  const list = ready ? listAnnouncements(user?.id ?? null, tier) : [];
 
   return (
     <main className="w-full flex-1 pb-10 pt-1 sm:pt-2">

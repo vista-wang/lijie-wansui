@@ -39,7 +39,7 @@ export default function FeedbackPage() {
       return;
     }
     try {
-      submitFeedback(user.id, body);
+      submitFeedback(user.id, body, tier);
       setBody("");
       setMessage(
         tier === "free"
