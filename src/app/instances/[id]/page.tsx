@@ -7,7 +7,7 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useData } from "@/components/data/DataProvider";
 import { Button } from "@/components/ui/Button";
@@ -49,9 +49,17 @@ export default function InstanceDetailPage() {
   const myScore = myRating?.score ?? null;
   const hasComment = Boolean(myComment);
 
-  const rateAnonymousRef = useRef(true);
+  const [rateAnonymous, setRateAnonymous] = useState(true);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [anonBusy, setAnonBusy] = useState(false);
+
+  // 已有评分时，与服务器匿名状态对齐（仅在评分记录变化时）
+  useEffect(() => {
+    if (myRating) {
+      setRateAnonymous(myRating.anonymous !== false);
+    }
+  }, [myRating?.id, myRating?.updatedAt, myRating?.anonymous]);
 
   if (!loaded) {
     return (
@@ -81,12 +89,34 @@ export default function InstanceDetailPage() {
       await upsertRatingAction({
         instanceId: id,
         score,
-        anonymous: rateAnonymousRef.current,
+        anonymous: rateAnonymous,
       });
       await refresh();
       setMessage(myScore == null ? "评分已提交" : "评分已更新");
     } catch (e) {
       setError(e instanceof Error ? e.message : "评分失败");
+    }
+  }
+
+  async function onToggleRateAnonymous(next: boolean) {
+    setRateAnonymous(next);
+    if (!canAct || myScore == null) return;
+    setAnonBusy(true);
+    setError("");
+    setMessage("");
+    try {
+      await upsertRatingAction({
+        instanceId: id,
+        score: myScore,
+        anonymous: next,
+      });
+      await refresh();
+      setMessage(next ? "已改为匿名评分" : "已显示你的姓名");
+    } catch (e) {
+      setRateAnonymous(!next);
+      setError(e instanceof Error ? e.message : "匿名设置失败");
+    } finally {
+      setAnonBusy(false);
     }
   }
 
@@ -161,13 +191,21 @@ export default function InstanceDetailPage() {
             ）
           </p>
         )}
-        <RateAnonToggle
-          key={`rate-anon-${myRating?.updatedAt ?? "new"}`}
-          initialAnonymous={myRating?.anonymous !== false}
-          onChange={(value) => {
-            rateAnonymousRef.current = value;
-          }}
-        />
+        <label className="mt-3 flex min-h-11 cursor-pointer items-center gap-2.5 text-[15px] text-[var(--label)]">
+          <input
+            type="checkbox"
+            className="h-4 w-4 shrink-0 accent-[var(--system-blue)]"
+            checked={rateAnonymous}
+            disabled={!canAct || anonBusy}
+            onChange={(e) => void onToggleRateAnonymous(e.target.checked)}
+          />
+          <span>匿名评分（不显示我的名字）</span>
+        </label>
+        <p className="mt-1 text-[13px] text-[var(--secondary-label)]">
+          {rateAnonymous
+            ? "当前：公开不显示姓名"
+            : "当前：公开将显示你的姓名"}
+        </p>
 
         {instance.scoringMode === "scale_10" ? (
           <div className="mt-4 flex flex-wrap gap-2">
@@ -264,35 +302,6 @@ export default function InstanceDetailPage() {
         </ul>
       </section>
     </main>
-  );
-}
-
-function RateAnonToggle({
-  initialAnonymous,
-  onChange,
-}: {
-  initialAnonymous: boolean;
-  onChange: (value: boolean) => void;
-}) {
-  const [anonymous, setAnonymous] = useState(initialAnonymous);
-
-  useEffect(() => {
-    onChange(initialAnonymous);
-  }, [initialAnonymous, onChange]);
-
-  return (
-    <label className="mt-3 flex items-center gap-2 text-[14px] text-[var(--label)]">
-      <input
-        type="checkbox"
-        checked={anonymous}
-        onChange={(e) => {
-          const next = e.target.checked;
-          setAnonymous(next);
-          onChange(next);
-        }}
-      />
-      匿名评分（不显示我的名字）
-    </label>
   );
 }
 
