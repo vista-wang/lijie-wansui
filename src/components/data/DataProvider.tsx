@@ -5,7 +5,7 @@
  * 使用 Cursor 制作
  */
 
-import { useAuth } from "@clerk/nextjs";
+import { useAuth, useUser } from "@clerk/nextjs";
 import {
   createContext,
   useCallback,
@@ -33,6 +33,7 @@ const DataContext = createContext<DataContextValue | null>(null);
 
 export function DataProvider({ children }: { children: React.ReactNode }) {
   const { isSignedIn, userId } = useAuth();
+  const { user: clerkUser } = useUser();
   const [ready, setReady] = useState(isStoreHydrated());
   const [error, setError] = useState<string | null>(null);
   const [, setTick] = useState(0);
@@ -51,22 +52,34 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     clearLegacyMockStorage();
-    void ensureHydrated().then(() => {
-      setReady(true);
-      setTick((n) => n + 1);
-    }).catch((e) => {
-      setError(e instanceof Error ? e.message : "加载失败");
-      setReady(true);
-    });
+    void ensureHydrated()
+      .then(() => {
+        setReady(true);
+        setTick((n) => n + 1);
+      })
+      .catch((e) => {
+        setError(e instanceof Error ? e.message : "加载失败");
+        setReady(true);
+      });
     return subscribeStore(() => setTick((n) => n + 1));
   }, []);
 
   useEffect(() => {
     if (!isSignedIn || !userId) return;
-    void ensureProfileAction().then(() => refresh()).catch(() => {
-      // 无真名时占位；账号页可再填
-    });
-  }, [isSignedIn, userId, refresh]);
+    let cancelled = false;
+    void ensureProfileAction()
+      .then(async () => {
+        if (cancelled) return;
+        await clerkUser?.reload();
+        await refresh();
+      })
+      .catch(() => {
+        // 无真名时占位；账号页可再填
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [isSignedIn, userId, refresh, clerkUser]);
 
   const value = useMemo(
     () => ({ ready, error, refresh }),

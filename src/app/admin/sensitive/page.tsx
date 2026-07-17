@@ -36,7 +36,7 @@ export default function SensitiveWordsPage() {
           敏感词管理
         </h1>
         <p className="mt-3 text-[17px] text-[var(--secondary-label)]">
-          需要管理员账号（Clerk publicMetadata.role = admin）。
+          需要管理员账号。
         </p>
       </main>
     );

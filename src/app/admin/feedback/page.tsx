@@ -37,7 +37,7 @@ function AdminFeedbackContent() {
       <main className="w-full py-12">
         <h1 className="text-[28px] font-semibold text-[var(--label)]">反馈</h1>
         <p className="mt-3 text-[15px] text-[var(--secondary-label)]">
-          需要管理员账号（Clerk publicMetadata.role = admin）。
+          需要管理员账号。
         </p>
       </main>
     );

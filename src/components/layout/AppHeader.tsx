@@ -7,6 +7,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { MembershipBadge } from "@/components/membership/MembershipBadge";
+import { useMembership } from "@/lib/hooks/useMembership";
 
 const navItems = [
   { href: "/", label: "主页", match: (p: string) => p === "/" },
@@ -35,10 +37,18 @@ function navClass(active: boolean) {
   }`;
 }
 
+function tabIcon(label: string) {
+  if (label === "主页") return "⌂";
+  if (label === "搜索") return "⌕";
+  if (label === "记录") return "☰";
+  if (label === "公告") return "◌";
+  return "◔";
+}
+
 export function AppHeader({ authSlot }: { authSlot?: React.ReactNode }) {
   const pathname = usePathname();
-  const membershipActive = pathname.startsWith("/membership");
   const accountActive = pathname.startsWith("/account");
+  const { tier, ready } = useMembership();
 
   return (
     <>
@@ -63,13 +73,12 @@ export function AppHeader({ authSlot }: { authSlot?: React.ReactNode }) {
             ))}
           </nav>
 
-          <div className="ml-auto flex items-center gap-1">
-            <Link
-              href="/membership"
-              className={`hidden md:inline-flex ${navClass(membershipActive)} text-[var(--system-blue)]`}
-            >
-              高级会员
-            </Link>
+          <div className="ml-auto flex items-center gap-1.5 sm:gap-2">
+            {ready && (tier === "plus" || tier === "super") && (
+              <span className="hidden sm:inline-flex" aria-label="会员身份">
+                <MembershipBadge tier={tier} compact />
+              </span>
+            )}
             <Link
               href="/account"
               className={`hidden md:inline-flex ${navClass(accountActive)}`}
@@ -87,12 +96,7 @@ export function AppHeader({ authSlot }: { authSlot?: React.ReactNode }) {
       >
         <div className="mx-auto grid max-w-3xl grid-cols-5 px-0.5 pt-1">
           {[
-            ...navItems.slice(0, 3),
-            {
-              href: "/membership",
-              label: "会员",
-              match: (p: string) => p.startsWith("/membership"),
-            },
+            ...navItems,
             {
               href: "/account",
               label: "账号",
@@ -111,15 +115,7 @@ export function AppHeader({ authSlot }: { authSlot?: React.ReactNode }) {
                 }`}
               >
                 <span className="text-[14px] leading-none" aria-hidden>
-                  {item.label === "主页"
-                    ? "⌂"
-                    : item.label === "搜索"
-                      ? "⌕"
-                      : item.label === "记录"
-                        ? "☰"
-                        : item.label === "会员"
-                          ? "◆"
-                          : "◔"}
+                  {tabIcon(item.label)}
                 </span>
                 {item.label}
               </Link>

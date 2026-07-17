@@ -31,7 +31,12 @@ export function readPublicMeta(
   };
 }
 
+/**
+ * 解析会员档位。管理员视为永久超级会员（含去广告、徽章、推荐加权等）。
+ */
 export function resolveMembershipTier(meta: ClerkPublicMeta): MembershipTier {
+  if (meta.role === "admin") return "super";
+
   const tier = meta.membershipTier ?? "free";
   if (tier === "free") return "free";
   if (

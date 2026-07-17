@@ -10,6 +10,7 @@ import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useData } from "@/components/data/DataProvider";
+import { MembershipBadge } from "@/components/membership/MembershipBadge";
 import { InstanceList } from "@/components/instances/InstanceList";
 import { Pagination } from "@/components/ui/Pagination";
 import { getHomeRecommendPage } from "@/lib/data/repositories";
@@ -75,11 +76,18 @@ function HomeContent() {
         className="animate-rise mt-2 max-w-xl text-[15px] leading-relaxed text-[var(--secondary-label)] sm:text-[17px]"
         style={{ animationDelay: "60ms" }}
       >
-        {user
-          ? `按你的口味挑了一批${
-              tier !== "free" ? `（${label}）` : ""
-            }。喜欢就评一下，越用越懂你。`
-          : "先随便逛逛。登录后，我们会按你的喜好来推荐。"}
+        {user ? (
+          <span className="inline-flex flex-wrap items-center gap-2">
+            <span>
+              按你的口味挑了一批
+              {tier !== "free" ? `（${label}）` : ""}
+              。喜欢就评一下，越用越懂你。
+            </span>
+            <MembershipBadge tier={tier} compact />
+          </span>
+        ) : (
+          "先随便逛逛。登录后，我们会按你的喜好来推荐。"
+        )}
       </p>
 
       <div className="mt-8 space-y-3 sm:mt-10">

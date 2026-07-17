@@ -30,21 +30,22 @@ import {
   formatScoreSummary,
   scoringModeLabel,
 } from "@/lib/i18n/labels";
+import { REAL_NAME_REQUIRED } from "@/lib/auth/messages";
 
 export default function InstanceDetailPage() {
   const ready = useClientReady();
   const { ready: dataReady, refresh } = useData();
   const params = useParams<{ id: string }>();
   const id = params.id;
-  const { user } = useAuth();
+  const { user, canAct } = useAuth();
   useStoreRevision();
 
   const loaded = ready && dataReady;
   const instance = loaded ? getPublicInstance(id) : null;
   const summary = loaded ? getInstanceScoreSummary(id) : null;
   const comments = loaded ? listPublicComments(id) : [];
-  const myRating = loaded && user ? getMyRating(id, user.id) : null;
-  const myComment = loaded && user ? getMyComment(id, user.id) : null;
+  const myRating = loaded && canAct && user ? getMyRating(id, user.id) : null;
+  const myComment = loaded && canAct && user ? getMyComment(id, user.id) : null;
   const myScore = myRating?.score ?? null;
   const hasComment = Boolean(myComment);
 
@@ -72,8 +73,8 @@ export default function InstanceDetailPage() {
   async function submitScore(score: number) {
     setError("");
     setMessage("");
-    if (!user) {
-      setError("登录后才能评分哦");
+    if (!canAct) {
+      setError(REAL_NAME_REQUIRED);
       return;
     }
     try {
@@ -92,8 +93,8 @@ export default function InstanceDetailPage() {
   async function submitComment(body: string, anonymous: boolean) {
     setError("");
     setMessage("");
-    if (!user) {
-      setError("登录后才能评论哦");
+    if (!canAct) {
+      setError(REAL_NAME_REQUIRED);
       return;
     }
     if (!body.trim()) {
@@ -151,6 +152,15 @@ export default function InstanceDetailPage() {
         <p className="mt-1 text-[14px] text-[var(--secondary-label)]">
           每人一条，可改。是否公开姓名由你决定。
         </p>
+        {!canAct && (
+          <p className="mt-3 text-[14px] text-[var(--system-blue)]">
+            {REAL_NAME_REQUIRED}（
+            <Link href="/account" className="underline-offset-2 hover:underline">
+              去账号页
+            </Link>
+            ）
+          </p>
+        )}
         <RateAnonToggle
           key={`rate-anon-${myRating?.updatedAt ?? "new"}`}
           initialAnonymous={myRating?.anonymous !== false}
@@ -165,8 +175,9 @@ export default function InstanceDetailPage() {
               <button
                 key={n}
                 type="button"
+                disabled={!canAct}
                 onClick={() => submitScore(n)}
-                className={`min-h-11 min-w-11 rounded-xl text-[15px] font-medium transition ${
+                className={`min-h-11 min-w-11 rounded-xl text-[15px] font-medium transition disabled:opacity-40 ${
                   myScore === n
                     ? "bg-[var(--system-blue)] text-white"
                     : "bg-black/[0.06] text-[var(--label)] hover:bg-black/[0.1] dark:bg-white/[0.1]"
@@ -181,6 +192,7 @@ export default function InstanceDetailPage() {
             <Button
               type="button"
               variant={myScore === 1 ? "primary" : "secondary"}
+              disabled={!canAct}
               onClick={() => submitScore(1)}
             >
               赞成
@@ -188,6 +200,7 @@ export default function InstanceDetailPage() {
             <Button
               type="button"
               variant={myScore === 0 ? "primary" : "secondary"}
+              disabled={!canAct}
               onClick={() => submitScore(0)}
             >
               反对
@@ -207,6 +220,7 @@ export default function InstanceDetailPage() {
           initialBody={myComment?.body ?? ""}
           initialAnonymous={myComment?.anonymous !== false}
           hasComment={hasComment}
+          disabled={!canAct}
           onSubmit={submitComment}
         />
       </section>
@@ -286,11 +300,13 @@ function CommentComposer({
   initialBody,
   initialAnonymous,
   hasComment,
+  disabled = false,
   onSubmit,
 }: {
   initialBody: string;
   initialAnonymous: boolean;
   hasComment: boolean;
+  disabled?: boolean;
   onSubmit: (body: string, anonymous: boolean) => void;
 }) {
   const [draftComment, setDraftComment] = useState(initialBody);
@@ -299,7 +315,8 @@ function CommentComposer({
   return (
     <>
       <textarea
-        className="mt-4 w-full min-h-24 resize-y rounded-xl border border-[var(--separator)] bg-[var(--background)] px-3 py-3 text-[17px] text-[var(--label)] outline-none focus-visible:ring-2 focus-visible:ring-[var(--system-blue)]"
+        disabled={disabled}
+        className="mt-4 w-full min-h-24 resize-y rounded-xl border border-[var(--separator)] bg-[var(--background)] px-3 py-3 text-[17px] text-[var(--label)] outline-none focus-visible:ring-2 focus-visible:ring-[var(--system-blue)] disabled:opacity-40"
         value={draftComment}
         onChange={(e) => setDraftComment(e.target.value)}
         placeholder={hasComment ? "改改你的评论" : "说说你的看法"}
@@ -307,13 +324,18 @@ function CommentComposer({
       <label className="mt-3 flex items-center gap-2 text-[14px] text-[var(--label)]">
         <input
           type="checkbox"
+          disabled={disabled}
           checked={anonymous}
           onChange={(e) => setAnonymous(e.target.checked)}
         />
         匿名发布（不显示我的名字）
       </label>
       <div className="mt-3">
-        <Button type="button" onClick={() => onSubmit(draftComment, anonymous)}>
+        <Button
+          type="button"
+          disabled={disabled}
+          onClick={() => onSubmit(draftComment, anonymous)}
+        >
           {hasComment ? "更新评论" : "发布评论"}
         </Button>
       </div>

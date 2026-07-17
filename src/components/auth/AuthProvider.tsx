@@ -11,11 +11,18 @@ import {
   useMemo,
 } from "react";
 import { useClerk, useUser } from "@clerk/nextjs";
-import { mapClerkToAppUser } from "@/lib/auth/clerk-meta";
+import {
+  mapClerkToAppUser,
+  readPublicMeta,
+} from "@/lib/auth/clerk-meta";
 import type { User } from "@/lib/types/domain";
 
 interface AuthContextValue {
   user: User | null;
+  /** 已在 publicMetadata 登记真实姓名 */
+  hasRealName: boolean;
+  /** 可执行写操作：已登录且已实名 */
+  canAct: boolean;
   ready: boolean;
   configured: boolean;
   signOut: () => Promise<void>;
@@ -38,16 +45,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
   }, [clerkUser]);
 
+  const hasRealName = useMemo(() => {
+    if (!clerkUser) return false;
+    const meta = readPublicMeta(
+      clerkUser.publicMetadata as Record<string, unknown>,
+    );
+    return Boolean(meta.realName?.trim());
+  }, [clerkUser]);
+
   const value = useMemo(
     () => ({
       user,
+      hasRealName,
+      canAct: Boolean(user && hasRealName),
       ready: isLoaded,
       configured: true,
       signOut: async () => {
         await clerkSignOut({ redirectUrl: "/" });
       },
     }),
-    [user, isLoaded, clerkSignOut],
+    [user, hasRealName, isLoaded, clerkSignOut],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

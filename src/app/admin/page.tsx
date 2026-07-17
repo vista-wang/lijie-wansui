@@ -29,8 +29,7 @@ export default function AdminPage() {
       <main className="w-full py-12">
         <h1 className="text-[28px] font-semibold text-[var(--label)]">管理</h1>
         <p className="mt-3 text-[17px] text-[var(--secondary-label)]">
-          需要管理员账号。请在 Clerk Dashboard 将该用户 publicMetadata.role 设为
-          admin。
+          需要管理员账号。
         </p>
       </main>
     );
@@ -56,10 +55,22 @@ export default function AdminPage() {
 
       <div className="mt-6 flex flex-wrap gap-3">
         <Link
-          href="/admin/sensitive"
+          href="/admin/feedback"
           className="inline-flex min-h-11 items-center rounded-xl bg-[var(--system-blue)] px-4 text-[15px] font-medium text-white"
         >
-          敏感词管理
+          反馈
+        </Link>
+        <Link
+          href="/admin/announcements"
+          className="inline-flex min-h-11 items-center rounded-xl bg-black/[0.06] px-4 text-[15px] font-medium text-[var(--label)] dark:bg-white/[0.1]"
+        >
+          公告管理
+        </Link>
+        <Link
+          href="/admin/sensitive"
+          className="inline-flex min-h-11 items-center rounded-xl bg-black/[0.06] px-4 text-[15px] font-medium text-[var(--label)] dark:bg-white/[0.1]"
+        >
+          敏感词
         </Link>
       </div>
 

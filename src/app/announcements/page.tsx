@@ -5,7 +5,6 @@
  * 使用 Cursor 制作
  */
 
-import Link from "next/link";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useData } from "@/components/data/DataProvider";
 import { listAnnouncements } from "@/lib/data/membership";
@@ -31,15 +30,6 @@ export default function AnnouncementsPage() {
       </h1>
       <p className="mt-2 text-[15px] text-[var(--secondary-label)] sm:text-[17px]">
         产品动态与活动通知。
-        {tier !== "super" && (
-          <>
-            {" "}
-            <Link href="/membership" className="text-[var(--system-blue)]">
-              超级会员
-            </Link>
-            还可与开发者交流。
-          </>
-        )}
       </p>
 
       <ul className="mt-8 space-y-3">

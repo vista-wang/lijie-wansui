@@ -16,11 +16,11 @@ Build **理解万岁**, a web-based universal evaluation system: users can disco
 - [x] Admin / audit + 敏感词打码  
 - [x] 推荐（用户亲和协同过滤）+ 会员加权（高级 1.35 / 超级 1.85）  
 - [x] 会员 / 广告 / 反馈 / 公告 / 隐私政策 `/privacy`  
-- [x] Clerk Auth + 会员元数据 + 真名占用提示 + **zhCN 本地化**  
+- [x] Clerk Auth + 会员元数据 + **强制实名** + **zhCN 本地化**  
 - [x] **内容仓储切到 Supabase**（无假数据；假种子已删）  
-- [x] 左上角仅 AIW（会员免广告时隐藏）；LS / 微信登录代码保留但未启用  
-- [ ] 日后启用 Lemon Squeezy 广告 / 微信登录（见文档）  
-- [ ] 生产环境补齐 `SUPABASE_SERVICE_ROLE_KEY`（收紧 RLS）
+- [x] 左上角仅 AIW（会员免广告时隐藏）；在线订阅入口已关闭；已移除 Lemon Squeezy  
+- [ ] 生产环境补齐 `SUPABASE_SERVICE_ROLE_KEY`（收紧 RLS）  
+- [ ] 微信登录默认关闭（`WECHAT_LOGIN_ENABLED`）
 
 ## Repo & continuity
 
@@ -33,10 +33,10 @@ Build **理解万岁**, a web-based universal evaluation system: users can disco
 | Dev | `npm run dev` → http://localhost:3000 |
 | Contact | `support@ethan128.top` |
 | AIWriter | **仅**左上角；会员免广告时隐藏 |
-| Lemon Squeezy | 代码保留（`lemon-ads` / `/api/ads`），**暂未上线** |
+| 会员订阅 | **已关闭在线开通**；档位由管理员配置；权益逻辑保留 |
 | Clerk 微信 | OIDC 代理已写好，**默认关闭**（`WECHAT_LOGIN_ENABLED`） |
 
-**会话锚点（2026-07-17）：** 认证 Clerk；内容 Supabase（profiles id = Clerk user id text）；本地 mock/种子已移除。
+**会话锚点（2026-07-17）：** 认证 Clerk；内容 Supabase；强制 `publicMetadata.realName` 后才能写操作；无 LS。
 
 ## Tech Stack
 
@@ -64,14 +64,18 @@ Build **理解万岁**, a web-based universal evaluation system: users can disco
 
 4. **Optional anonymity** — 用户自选是否公开展示昵称；审计始终保留 `authorId`。
 
-5. **Membership**  
-   - 高级：¥10/月 — 去广告、反馈优先、专属徽章、推荐加权  
-   - 超级：¥20/月 — 含高级全部 + 更强加权 +「与开发者交流」  
-   - 档位写入 Clerk `publicMetadata`
+5. **Real name required** — 未在 Clerk `publicMetadata.realName` 登记真实姓名的账号，与未注册相同，不能发布 / 评分 / 评论 / 反馈。注册默认同意隐私政策。
 
-6. **Ads** — **仅**左上角展示 AIW；会员免广告时隐藏。Lemon Squeezy 代码保留未接 UI。其它页面不放广告。
+6. **Membership**  
+   - 高级 / 超级权益逻辑保留（去广告、徽章、反馈优先、推荐加权等）  
+   - **不提供在线订阅 / 收款界面**；档位由管理员写入元数据  
+   - 管理员视为永久超级会员  
 
-7. **Audit** — 写操作实名记入后台。
+7. **Ads** — **仅**左上角展示 AIW；会员免广告时隐藏。其它页面不放广告。
+
+8. **Audit / privacy** — 写操作实名记入后台；特殊情形可移交第三方（如教学管理）；数据可用于模型训练 / 微调。详见 `/privacy`。
+
+9. **Navigation** — 同一功能在同一视图只保留一个入口（Apple HIG）。
 
 ## Domain Sketch
 
@@ -81,7 +85,7 @@ Build **理解万岁**, a web-based universal evaluation system: users can disco
 - **User / Profile** — Clerk id ↔ `profiles.id`（真名）。  
 - **AuditEvent** — who / what / when / entity id.
 
-写操作经 `src/lib/data/actions.ts`（先校验 Clerk）；读经内存快照 `src/lib/data/store.ts`。
+写操作经 `src/lib/data/actions.ts`（先校验 Clerk + 实名）；读经内存快照 `src/lib/data/store.ts`。
 
 ## Agent Operating Rules
 
@@ -103,7 +107,7 @@ npm run build
 ## Suggested next
 
 1. 配置 `SUPABASE_SERVICE_ROLE_KEY` 并收紧 RLS。  
-2. 需要时再开 Lemon Squeezy / 微信登录（见文档）。  
+2. 需要时再开微信登录（见 `docs/plans/2026-07-17-clerk-wechat-zh.md`）。  
 3. 其它产品迭代按用户新指示。
 
 ## Open Questions

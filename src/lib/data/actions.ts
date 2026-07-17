@@ -11,6 +11,7 @@ import { createId } from "@/lib/data/id";
 import { assertValidScore } from "@/lib/data/score";
 import {
   REAL_NAME_HINT,
+  REAL_NAME_REQUIRED,
   REAL_NAME_TAKEN_HINT,
 } from "@/lib/auth/messages";
 import {
@@ -43,7 +44,23 @@ async function requireUserId(): Promise<string> {
   return userId;
 }
 
-/** 确保 profiles 行存在（Clerk id） */
+/** 写操作必须已登录且已登记真实姓名（Clerk publicMetadata.realName） */
+async function requireRealNameUser(): Promise<{
+  userId: string;
+  realName: string;
+}> {
+  const userId = await requireUserId();
+  const client = await clerkClient();
+  const user = await client.users.getUser(userId);
+  const meta = readPublicMeta(user.publicMetadata as Record<string, unknown>);
+  const realName = meta.realName?.trim();
+  if (!realName) throw new Error(REAL_NAME_REQUIRED);
+  return { userId, realName };
+}
+
+/**
+ * 确保 profiles 行存在。无真实姓名时不建占位账号，写操作须先完成实名。
+ */
 export async function ensureProfileAction(input?: {
   realName?: string;
   email?: string;
@@ -53,16 +70,15 @@ export async function ensureProfileAction(input?: {
   const user = await client.users.getUser(userId);
   const meta = readPublicMeta(user.publicMetadata as Record<string, unknown>);
   const role = meta.role === "admin" ? "admin" : "user";
-  const realName =
-    input?.realName?.trim() ||
-    meta.realName?.trim() ||
-    user.fullName?.trim() ||
-    user.firstName?.trim() ||
-    "";
+  const realName = input?.realName?.trim() || meta.realName?.trim() || "";
   const email =
     input?.email?.trim() ||
     user.primaryEmailAddress?.emailAddress ||
     "";
+
+  if (!realName) {
+    return;
+  }
 
   const supabase = db();
   const { data: existing } = await supabase
@@ -71,31 +87,40 @@ export async function ensureProfileAction(input?: {
     .eq("id", userId)
     .maybeSingle();
 
+  const membershipTier: MembershipTier =
+    role === "admin"
+      ? "super"
+      : meta.membershipTier === "plus" || meta.membershipTier === "super"
+        ? meta.membershipTier
+        : "free";
+  const membershipExpiresAt =
+    role === "admin" ? null : (meta.membershipExpiresAt ?? null);
+
+  if (role === "admin" && meta.membershipTier !== "super") {
+    const nextMeta: ClerkPublicMeta = {
+      ...meta,
+      role: "admin",
+      membershipTier: "super",
+      membershipExpiresAt: undefined,
+    };
+    await client.users.updateUserMetadata(userId, {
+      publicMetadata: nextMeta,
+    });
+  }
+
   if (existing) {
     await supabase
       .from("profiles")
       .update({
-        ...(realName ? { real_name: realName } : {}),
+        real_name: realName,
         email,
         role,
       })
       .eq("id", userId);
-    return;
-  }
-
-  if (!realName) {
-    // 允许先建占位真名，账号页再改
-    const placeholder = `用户${userId.slice(-6)}`;
-    const { error } = await supabase.from("profiles").insert({
-      id: userId,
-      real_name: placeholder,
-      email,
-      role,
-    });
-    if (error) throw new Error(error.message);
     await supabase.from("memberships").upsert({
       user_id: userId,
-      tier: "free",
+      tier: membershipTier,
+      expires_at: membershipExpiresAt,
     });
     return;
   }
@@ -114,8 +139,8 @@ export async function ensureProfileAction(input?: {
   }
   await supabase.from("memberships").upsert({
     user_id: userId,
-    tier: meta.membershipTier === "free" || !meta.membershipTier ? "free" : meta.membershipTier,
-    expires_at: meta.membershipExpiresAt ?? null,
+    tier: membershipTier,
+    expires_at: membershipExpiresAt,
   });
 }
 
@@ -125,7 +150,7 @@ export async function createInstanceAction(input: {
   scoringMode: ScoringMode;
   category?: string;
 }): Promise<{ id: string }> {
-  const userId = await requireUserId();
+  const { userId } = await requireRealNameUser();
   await ensureProfileAction();
   const supabase = db();
   const id = createId("instance");
@@ -156,7 +181,7 @@ export async function upsertRatingAction(input: {
   score: number;
   anonymous?: boolean;
 }): Promise<void> {
-  const userId = await requireUserId();
+  const { userId } = await requireRealNameUser();
   await ensureProfileAction();
   const supabase = db();
   const { data: instance, error: instErr } = await supabase
@@ -222,7 +247,7 @@ export async function createCommentAction(input: {
   body: string;
   anonymous?: boolean;
 }): Promise<void> {
-  const userId = await requireUserId();
+  const { userId } = await requireRealNameUser();
   await ensureProfileAction();
   const body = input.body.trim();
   if (!body) throw new Error("请先写下评论");
@@ -263,7 +288,7 @@ export async function updateCommentAction(input: {
   body: string;
   anonymous?: boolean;
 }): Promise<void> {
-  const userId = await requireUserId();
+  const { userId } = await requireRealNameUser();
   const body = input.body.trim();
   if (!body) throw new Error("请先写下评论");
   const supabase = db();
@@ -295,7 +320,7 @@ export async function updateCommentAction(input: {
 }
 
 export async function submitFeedbackAction(body: string): Promise<void> {
-  const userId = await requireUserId();
+  const { userId } = await requireRealNameUser();
   await ensureProfileAction();
   const trimmed = body.trim();
   if (!trimmed) throw new Error("请先写下你的想法");
@@ -393,7 +418,7 @@ export async function removeSensitiveWordAction(word: string): Promise<void> {
 
 export async function syncMembershipToSupabaseAction(
   tier: MembershipTier,
-  expiresAt: string,
+  expiresAt: string | null,
 ): Promise<void> {
   const userId = await requireUserId();
   await ensureProfileAction();

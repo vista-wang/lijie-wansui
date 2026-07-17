@@ -39,30 +39,3 @@ export const MEMBERSHIP_RECOMMEND_WEIGHT: Record<MembershipTier, number> = {
   plus: 1.35,
   super: 1.85,
 };
-
-export const MEMBERSHIP_PLANS = [
-  {
-    tier: "plus" as const,
-    name: "高级会员",
-    priceYuan: 10,
-    period: "月",
-    highlights: [
-      "免除广告",
-      "反馈优先处理",
-      "推荐算法加权",
-      "专属身份徽章",
-    ],
-  },
-  {
-    tier: "super" as const,
-    name: "超级会员",
-    priceYuan: 20,
-    period: "月",
-    highlights: [
-      "高级会员的全部内容",
-      "更强的推荐算法加权",
-      "反馈最高优先级",
-      "与开发者交流",
-    ],
-  },
-] as const;

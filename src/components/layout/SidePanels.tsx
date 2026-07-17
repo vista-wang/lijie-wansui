@@ -172,12 +172,6 @@ export function RightSidePanel() {
         <p className="text-[13px] leading-relaxed text-[var(--secondary-label)]">
           多评几条，首页会更懂你。评分和评论都能自己选要不要匿名。
         </p>
-        <Link
-          href="/feedback"
-          className="mt-3 inline-block text-[13px] font-medium text-[var(--system-blue)]"
-        >
-          有想法？去反馈
-        </Link>
       </Panel>
     </div>
   );

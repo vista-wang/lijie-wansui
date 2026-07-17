@@ -5,10 +5,16 @@
 
 export const REAL_NAME_HINT = "务必填写真实姓名";
 
+export const REAL_NAME_REQUIRED =
+  "请先登录并完成真实姓名登记，否则无法进行此操作";
+
 export const REAL_NAME_TAKEN_HINT =
   "若真实姓名已被占用，请发邮件至 support@ethan128.top 证明身份后由人工处理。";
 
 export const SUPPORT_EMAIL = "support@ethan128.top";
+
+export const PRIVACY_AGREE_HINT =
+  "注册即表示你已阅读并同意《隐私政策》";
 
 export function mapAuthError(message: string): string {
   const m = message.toLowerCase();

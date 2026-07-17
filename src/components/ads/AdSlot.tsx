@@ -3,11 +3,8 @@
 /**
  * 理解万岁 · 左上角广告位（仅 AIW；会员免广告时隐藏）
  * 使用 Cursor 制作
- *
- * Lemon Squeezy 广告源代码保留在 src/lib/data/lemon-ads.ts 与 /api/ads，暂未上线。
  */
 
-import Link from "next/link";
 import {
   AIW_AD,
   adLabelText,
@@ -44,17 +41,9 @@ export function AiwAdSlot({ compact = true }: { compact?: boolean }) {
       }`}
       aria-label={adLabelText(ad)}
     >
-      <div className="flex items-center justify-between gap-2">
-        <p className="text-[11px] font-medium text-[var(--secondary-label)]">
-          {adLabelText(ad)}
-        </p>
-        <Link
-          href="/membership"
-          className="text-[11px] text-[var(--secondary-label)] underline-offset-2 hover:underline"
-        >
-          去广告
-        </Link>
-      </div>
+      <p className="text-[11px] font-medium text-[var(--secondary-label)]">
+        {adLabelText(ad)}
+      </p>
       <p
         className={`mt-1.5 font-semibold text-[var(--label)] ${
           compact ? "text-[14px]" : "text-[16px]"

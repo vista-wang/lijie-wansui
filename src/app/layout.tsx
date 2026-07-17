@@ -8,7 +8,6 @@ import {
   Show,
   SignInButton,
   SignUpButton,
-  UserButton,
 } from "@clerk/nextjs";
 import { zhCN } from "@clerk/localizations";
 import type { Metadata } from "next";
@@ -51,7 +50,7 @@ export default function RootLayout({
                           登录
                         </button>
                       </SignInButton>
-                      <SignUpButton mode="modal">
+                      <SignUpButton mode="modal" forceRedirectUrl="/account">
                         <button
                           type="button"
                           className="rounded-lg bg-[var(--system-blue)] px-3 py-2 text-[14px] font-medium text-white sm:text-[15px]"
@@ -59,9 +58,6 @@ export default function RootLayout({
                           注册
                         </button>
                       </SignUpButton>
-                    </Show>
-                    <Show when="signed-in">
-                      <UserButton />
                     </Show>
                   </div>
                 }

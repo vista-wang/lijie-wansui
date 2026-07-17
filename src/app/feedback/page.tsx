@@ -6,7 +6,6 @@
  */
 
 import { useState } from "react";
-import Link from "next/link";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { Button } from "@/components/ui/Button";
 import {
@@ -19,12 +18,13 @@ import { useStoreRevision } from "@/lib/data/use-store-revision";
 import { useClientReady } from "@/lib/hooks/useClientReady";
 import { useMembership } from "@/lib/hooks/useMembership";
 import { formatDateTime } from "@/lib/i18n/labels";
+import { REAL_NAME_REQUIRED } from "@/lib/auth/messages";
 
 export default function FeedbackPage() {
   const ready = useClientReady();
   const { ready: dataReady, refresh } = useData();
   useStoreRevision();
-  const { user } = useAuth();
+  const { user, canAct } = useAuth();
   const { tier, label } = useMembership();
   const [body, setBody] = useState("");
   const [message, setMessage] = useState("");
@@ -36,8 +36,8 @@ export default function FeedbackPage() {
     e.preventDefault();
     setMessage("");
     setError("");
-    if (!user) {
-      setError("请先登录后再提交反馈。");
+    if (!canAct) {
+      setError(REAL_NAME_REQUIRED);
       return;
     }
     try {
@@ -61,27 +61,18 @@ export default function FeedbackPage() {
       </h1>
       <p className="mt-2 max-w-xl text-[15px] text-[var(--secondary-label)] sm:text-[17px]">
         告诉我们哪里不好用、想要什么功能。
-        {ready && user ? (
-          <>
-            {" "}
-            当前身份：{label}。
-            {tier === "free" && (
-              <Link href="/membership" className="text-[var(--system-blue)]">
-                开通会员可提高处理优先级
-              </Link>
-            )}
-          </>
-        ) : null}
+        {ready && user ? <> 当前身份：{label}。</> : null}
       </p>
 
       <form onSubmit={onSubmit} className="mt-8">
         <textarea
-          className="w-full min-h-32 resize-y rounded-2xl border border-[var(--separator)] bg-[var(--grouped-background)] px-4 py-3 text-[17px] text-[var(--label)] outline-none focus-visible:ring-2 focus-visible:ring-[var(--system-blue)]"
+          className="w-full min-h-32 resize-y rounded-2xl border border-[var(--separator)] bg-[var(--grouped-background)] px-4 py-3 text-[17px] text-[var(--label)] outline-none focus-visible:ring-2 focus-visible:ring-[var(--system-blue)] disabled:opacity-40"
           placeholder="例如：希望能按城市筛选…"
           value={body}
+          disabled={!canAct}
           onChange={(e) => setBody(e.target.value)}
         />
-        <Button type="submit" className="mt-4">
+        <Button type="submit" className="mt-4" disabled={!canAct}>
           提交反馈
         </Button>
       </form>

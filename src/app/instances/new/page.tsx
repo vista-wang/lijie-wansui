@@ -6,10 +6,11 @@ import { useAuth } from "@/components/auth/AuthProvider";
 import { useData } from "@/components/data/DataProvider";
 import { Button } from "@/components/ui/Button";
 import { createInstanceAction } from "@/lib/data/actions";
+import { REAL_NAME_REQUIRED } from "@/lib/auth/messages";
 import type { ScoringMode } from "@/lib/types/domain";
 
 export default function NewInstancePage() {
-  const { user } = useAuth();
+  const { canAct } = useAuth();
   const { refresh } = useData();
   const router = useRouter();
   const [title, setTitle] = useState("");
@@ -22,8 +23,8 @@ export default function NewInstancePage() {
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
-    if (!user) {
-      setError("请先登录");
+    if (!canAct) {
+      setError(REAL_NAME_REQUIRED);
       return;
     }
     if (!title.trim() || !description.trim()) {
@@ -55,6 +56,11 @@ export default function NewInstancePage() {
       <p className="mt-2 text-[17px] text-[var(--secondary-label)]">
         可以是一家店、一个议题……选好打分方式后就不能改啦。
       </p>
+      {!canAct && (
+        <p className="mt-3 text-[15px] text-[var(--system-blue)]">
+          {REAL_NAME_REQUIRED}
+        </p>
+      )}
 
       <form onSubmit={onSubmit} className="mt-8 space-y-5">
         <Field label="标题">

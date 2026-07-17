@@ -12,7 +12,7 @@ alwaysApply: true
 - 产品：**理解万岁** — 通用网页评价系统
 - GitHub：`vista-wang/lijie-wansui`
 - 界面文案：**仅中文** · UI：Apple HIG
-- 公开可匿名；写操作后台实名审计
+- 公开可匿名；写操作后台实名审计；未实名等同未注册，不能写操作
 
 ## 当前技术事实
 
@@ -20,7 +20,8 @@ alwaysApply: true
 - 内容数据：**Supabase**（`profiles.id` = Clerk user id text）
 - 假数据 / mock 种子已删除；首页空站直到用户发布
 - AIW：**仅**左上角；会员免广告时隐藏；其它页面不放广告
-- Lemon Squeezy / 微信登录：代码保留，**暂未启用**
+- 在线订阅已关闭；会员档位由管理员配置
+- 微信登录：代码保留，**默认关闭**（`WECHAT_LOGIN_ENABLED`）
 - 方法文档：`docs/plans/2026-07-17-clerk-wechat-zh.md`
 
 ## 不要混淆

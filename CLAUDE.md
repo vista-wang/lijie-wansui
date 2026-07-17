@@ -12,11 +12,11 @@ This file is the Claude/Cursor agent entrypoint for this repo. Prefer `AGENT.md`
 
 - Product: universal web evaluation system. 
 - Public reviews are **anonymous**; backend audit is **real-name**. 
-- **Clerk Auth** — email/password + real name in metadata；UI `zhCN`. 
+- **Clerk Auth** — email/password + **强制实名**（`publicMetadata.realName`）；未实名不能写操作；UI `zhCN`. 
 - **Supabase** — domain content（instances / ratings / …）；非 Supabase Auth. 
-- UI: Apple Human Interface Guidelines；界面文案仅中文。 
-- 敏感词：公开展示打码；管理员维护词库。 
-- AIW 广告仅左上角且始终展示。 
+- UI: Apple Human Interface Guidelines；界面文案仅中文；同一功能不设双入口. 
+- 敏感词：公开展示打码；管理员维护词库. 
+- AIW 广告仅左上角；会员免广告时隐藏；在线订阅已关闭. 
 - If blocked or overthinking: stop, report to user, wait.
 
 ## Project map
