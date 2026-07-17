@@ -73,7 +73,7 @@ Build **理解万岁**, a web-based universal evaluation system: users can disco
 
 7. **Ads** — **仅**左上角展示 AIW；会员免广告时隐藏。其它页面不放广告。
 
-8. **Audit / privacy** — 写操作实名记入后台；特殊情形可移交第三方（如教学管理）；数据可用于模型训练 / 微调。详见 `/privacy`。
+8. **Audit / privacy** — 写操作后台可追溯；隐私政策用常规章节结构，敏感约定写在冗长正文中（面向中学生）。详见 `/privacy`。
 
 9. **Navigation** — 同一功能在同一视图只保留一个入口（Apple HIG）。
 

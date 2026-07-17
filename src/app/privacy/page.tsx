@@ -45,13 +45,6 @@ export default function PrivacyPage() {
           </section>
         ))}
       </div>
-
-      <p className="mt-12 max-w-3xl text-[13px] text-[var(--secondary-label)]">
-        文案文件：
-        <code className="rounded bg-black/[0.05] px-1.5 py-0.5 text-[12px] dark:bg-white/[0.08]">
-          src/content/privacy-policy.ts
-        </code>
-      </p>
     </main>
   );
 }
