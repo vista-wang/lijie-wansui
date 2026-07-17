@@ -19,8 +19,8 @@ alwaysApply: true
 - Auth：**Clerk**（`zhCN`；真名 / 会员 / role 在 `publicMetadata`）
 - 内容数据：**Supabase**（`profiles.id` = Clerk user id text）
 - 假数据 / mock 种子已删除；首页空站直到用户发布
-- AIW / Lemon Squeezy 广告：仅左上角；**会员免广告时隐藏**
-- 微信：OIDC 代理供 Clerk Custom Provider（非 PC OpenSDK）
+- AIW：**仅**左上角；会员免广告时隐藏；其它页面不放广告
+- Lemon Squeezy / 微信登录：代码保留，**暂未启用**
 - 方法文档：`docs/plans/2026-07-17-clerk-wechat-zh.md`
 
 ## 不要混淆

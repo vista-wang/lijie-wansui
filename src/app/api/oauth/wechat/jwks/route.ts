@@ -4,9 +4,16 @@
  */
 
 import { NextResponse } from "next/server";
+import { isWechatOidcConfigured } from "@/lib/auth/wechat-oidc";
 
 export const runtime = "nodejs";
 
 export async function GET() {
+  if (!isWechatOidcConfigured()) {
+    return NextResponse.json(
+      { error: "wechat_login_disabled" },
+      { status: 503 },
+    );
+  }
   return NextResponse.json({ keys: [] });
 }

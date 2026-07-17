@@ -6,6 +6,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
   assertOidcClient,
+  isWechatOidcConfigured,
   mintIdToken,
   openAuthCode,
 } from "@/lib/auth/wechat-oidc";
@@ -31,6 +32,12 @@ function parseBasicAuth(header: string | null): {
 }
 
 export async function POST(req: NextRequest) {
+  if (!isWechatOidcConfigured()) {
+    return NextResponse.json(
+      { error: "wechat_login_disabled" },
+      { status: 503 },
+    );
+  }
   const contentType = req.headers.get("content-type") || "";
   let body: URLSearchParams;
   if (contentType.includes("application/x-www-form-urlencoded")) {

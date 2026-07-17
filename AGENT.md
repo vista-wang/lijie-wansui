@@ -18,9 +18,8 @@ Build **理解万岁**, a web-based universal evaluation system: users can disco
 - [x] 会员 / 广告 / 反馈 / 公告 / 隐私政策 `/privacy`  
 - [x] Clerk Auth + 会员元数据 + 真名占用提示 + **zhCN 本地化**  
 - [x] **内容仓储切到 Supabase**（无假数据；假种子已删）  
-- [x] AIW / Lemon Squeezy 广告（左上角；**受会员免广告影响**）  
-- [x] 微信 OIDC 代理（Clerk Custom Provider；见 `docs/plans/2026-07-17-clerk-wechat-zh.md`）  
-- [ ] 在 Clerk Dashboard 启用 Custom provider 并配置微信 AppID  
+- [x] 左上角仅 AIW（会员免广告时隐藏）；LS / 微信登录代码保留但未启用  
+- [ ] 日后启用 Lemon Squeezy 广告 / 微信登录（见文档）  
 - [ ] 生产环境补齐 `SUPABASE_SERVICE_ROLE_KEY`（收紧 RLS）
 
 ## Repo & continuity
@@ -33,8 +32,9 @@ Build **理解万岁**, a web-based universal evaluation system: users can disco
 | App root | repository root |
 | Dev | `npm run dev` → http://localhost:3000 |
 | Contact | `support@ethan128.top` |
-| AIWriter | 左上角；**会员免广告时隐藏**；广告 API：Lemon Squeezy `/api/ads` |
-| Clerk 微信 | OIDC 代理 + Custom provider：`docs/plans/2026-07-17-clerk-wechat-zh.md` |
+| AIWriter | **仅**左上角；会员免广告时隐藏 |
+| Lemon Squeezy | 代码保留（`lemon-ads` / `/api/ads`），**暂未上线** |
+| Clerk 微信 | OIDC 代理已写好，**默认关闭**（`WECHAT_LOGIN_ENABLED`） |
 
 **会话锚点（2026-07-17）：** 认证 Clerk；内容 Supabase（profiles id = Clerk user id text）；本地 mock/种子已移除。
 
@@ -69,7 +69,7 @@ Build **理解万岁**, a web-based universal evaluation system: users can disco
    - 超级：¥20/月 — 含高级全部 + 更强加权 +「与开发者交流」  
    - 档位写入 Clerk `publicMetadata`
 
-6. **Ads** — 左上角；源为 Lemon Squeezy Products API + AIW 兜底；**会员免广告时不展示（含 AIW）**。
+6. **Ads** — **仅**左上角展示 AIW；会员免广告时隐藏。Lemon Squeezy 代码保留未接 UI。其它页面不放广告。
 
 7. **Audit** — 写操作实名记入后台。
 
@@ -103,7 +103,7 @@ npm run build
 ## Suggested next
 
 1. 配置 `SUPABASE_SERVICE_ROLE_KEY` 并收紧 RLS。  
-2. 按需实现微信登录桥接（见文档）。  
+2. 需要时再开 Lemon Squeezy / 微信登录（见文档）。  
 3. 其它产品迭代按用户新指示。
 
 ## Open Questions

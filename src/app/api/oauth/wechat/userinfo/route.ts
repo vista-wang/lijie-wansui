@@ -4,22 +4,25 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { fetchWechatUserInfo } from "@/lib/auth/wechat-oidc";
+import {
+  fetchWechatUserInfo,
+  isWechatOidcConfigured,
+} from "@/lib/auth/wechat-oidc";
 
 export const runtime = "nodejs";
 
 export async function GET(req: NextRequest) {
+  if (!isWechatOidcConfigured()) {
+    return NextResponse.json(
+      { error: "wechat_login_disabled" },
+      { status: 503 },
+    );
+  }
   const auth = req.headers.get("authorization") || "";
   const token = auth.startsWith("Bearer ") ? auth.slice(7) : "";
   if (!token) {
     return NextResponse.json({ error: "invalid_token" }, { status: 401 });
   }
-
-  // access_token 来自微信；openid 需再查一次时用 auth 接口不方便，
-  // 这里用 sns/auth 校验后，要求客户端已有 openid 不现实。
-  // 改用：token 换 userinfo 时微信需要 openid——我们在 token 响应里
-  // 把 access_token 设为「wechat_access|openid」合成串。
-  // 兼容：若是纯微信 access_token，则无法拿 userinfo；见 token 路由改进。
 
   const [accessToken, openid] = token.includes("|")
     ? (token.split("|") as [string, string])

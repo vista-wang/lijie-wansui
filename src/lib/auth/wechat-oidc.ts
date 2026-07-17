@@ -24,6 +24,7 @@ export function wechatOidcIssuer(): string {
 }
 
 export function isWechatOidcConfigured(): boolean {
+  if (process.env.WECHAT_LOGIN_ENABLED !== "true") return false;
   return Boolean(
     process.env.WECHAT_APP_ID &&
       process.env.WECHAT_APP_SECRET &&

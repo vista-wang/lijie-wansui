@@ -1,6 +1,8 @@
 /**
  * 理解万岁 · 广告 API（Lemon Squeezy + AIW）
  * 使用 Cursor 制作
+ *
+ * 暂未上线：UI 不调用本接口；保留供日后启用。
  */
 
 import { NextResponse } from "next/server";

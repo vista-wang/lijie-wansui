@@ -1,6 +1,9 @@
 /**
- * 理解万岁 · Lemon Squeezy 广告源
+ * 理解万岁 · Lemon Squeezy 广告源（代码保留，暂未上线）
  * 使用 Cursor 制作
+ *
+ * 当前 UI 仅左上角展示 AIW（见 AiwAdSlot），不调用本模块。
+ * 将来启用时由 /api/ads 暴露；请勿在其它页面散落广告位。
  */
 
 import { AIW_AD, type AdCreative } from "@/lib/data/ads";
